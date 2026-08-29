@@ -6,6 +6,7 @@ from openai import OpenAI
 
 INDEX_PATH = Path("data/rag_index.json")
 TRANSLATION_MODEL = "gpt-4.1-mini"
+MIN_SIMILARITY = 0.52
 
 with INDEX_PATH.open("r", encoding="utf-8") as file:
     index_data = json.load(file)
@@ -74,7 +75,24 @@ top_record_indices = sorted(
     reverse=True,
 )[:top_k]
 
+top_similarities = [
+    similarities[index]
+    for index in top_record_indices
+]
+
 print("検索された上位チャンク:", top_record_indices)
+print(
+    "上位チャンクの類似度:",
+    [round(score, 4) for score in top_similarities],
+)
+if top_similarities[0] < MIN_SIMILARITY:
+    print(
+        "判定: PDF内に十分近い根拠が見つかりませんでした。"
+    )
+    print(
+        "回答: このPDFの内容だけからは回答できません。"
+    )
+    raise SystemExit
 
 retrieved_chunks = [
     records[index]["text"]
