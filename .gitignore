@@ -10,3 +10,6 @@ __pycache__/
 
 # macOSが自動生成するファイル
 .DS_Store
+
+# RAGで使用するローカル文書
+data/
