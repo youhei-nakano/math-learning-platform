@@ -1,0 +1,64 @@
+{
+  "pattern": "agents_sdk_handoffs",
+  "passed": 6,
+  "total": 6,
+  "score": 1.0,
+  "total_latency_seconds": 13.685,
+  "cases": [
+    {
+      "id": "differentiate_polynomial_ja",
+      "question": "x^4 - 3*x^2 + 7 を微分してください",
+      "expected_tool": "differentiate_polynomial",
+      "actual_tool": "differentiate_polynomial",
+      "last_agent": "Differentiation specialist",
+      "passed": true,
+      "latency_seconds": 2.848
+    },
+    {
+      "id": "reject_trigonometric_ja",
+      "question": "sin(x) を微分してください",
+      "expected_tool": "differentiate_polynomial",
+      "actual_tool": "differentiate_polynomial",
+      "last_agent": "Differentiation specialist",
+      "passed": true,
+      "latency_seconds": 2.242
+    },
+    {
+      "id": "differentiate_polynomial_en",
+      "question": "Differentiate 2*x^3 + x with respect to x.",
+      "expected_tool": "differentiate_polynomial",
+      "actual_tool": "differentiate_polynomial",
+      "last_agent": "Differentiation specialist",
+      "passed": true,
+      "latency_seconds": 1.836
+    },
+    {
+      "id": "canonical_one_form",
+      "question": "余接束の標準的1形式を定義してください",
+      "expected_tool": "search_math_pdf",
+      "actual_tool": "search_math_pdf",
+      "last_agent": "Literature specialist",
+      "passed": true,
+      "latency_seconds": 2.763
+    },
+    {
+      "id": "darboux_theorem",
+      "question": "ダルブーの定理は何を述べていますか？",
+      "expected_tool": "search_math_pdf",
+      "actual_tool": "search_math_pdf",
+      "last_agent": "Literature specialist",
+      "passed": true,
+      "latency_seconds": 1.947
+    },
+    {
+      "id": "riemann_hypothesis",
+      "question": "リーマン予想は証明されていますか？",
+      "expected_tool": "search_math_pdf",
+      "actual_tool": "search_math_pdf",
+      "last_agent": "Literature specialist",
+      "passed": true,
+      "latency_seconds": 2.049
+    }
+  ],
+  "comparison_note": "Compare this routing score and API latency with the single-router Function Calling baseline. Multi-agent is not used in production."
+}

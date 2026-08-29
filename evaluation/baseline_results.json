@@ -1,0 +1,16 @@
+{
+  "retrieval": {
+    "metric": "Hit@3",
+    "hits": 7,
+    "total": 10,
+    "score": 0.7,
+    "notes": "Japanese questions translated to English before embedding."
+  },
+  "answerability": {
+    "threshold": 0.52,
+    "answerable_min_similarity": 0.5869,
+    "unanswerable_max_similarity": 0.4571,
+    "answerable_cases": 10,
+    "unanswerable_cases": 5
+  }
+}

@@ -1,10 +1,11 @@
 import json
 import math
+import os
 import re
 from pathlib import Path
 
 import sympy
-from openai import OpenAI
+from openai import OpenAI, OpenAIError
 
 
 INDEX_PATH = Path("data/rag_index.json")
@@ -13,6 +14,31 @@ WORKFLOW_MODEL = "gpt-4.1-mini"
 MIN_SIMILARITY = 0.52
 MAX_EXPRESSION_LENGTH = 200
 TOP_K = 3
+
+
+class WorkflowError(Exception):
+    """Base exception for user-facing workflow failures."""
+
+
+class WorkflowConfigurationError(WorkflowError):
+    """Raised when local configuration is incomplete."""
+
+
+class WorkflowInputError(WorkflowError):
+    """Raised when a request violates workflow constraints."""
+
+
+class WorkflowServiceError(WorkflowError):
+    """Raised when an external API request fails."""
+
+
+def create_client():
+    if not os.getenv("OPENAI_API_KEY"):
+        raise WorkflowConfigurationError(
+            "OPENAI_API_KEYが設定されていません。"
+        )
+
+    return OpenAI()
 
 def load_rag_index():
     if not INDEX_PATH.exists():
@@ -281,41 +307,78 @@ def create_final_response(
         ],
     )
 
-def main():
-    client = OpenAI()
-    user_input = input("質問を入力してください: ").strip()
 
-    if not user_input:
-        print("質問が入力されていません。")
-        return
+def run_workflow(user_input, client=None):
+    """Run one routed request and return structured UI-friendly data."""
+    question = user_input.strip()
+    if not question:
+        raise WorkflowInputError("質問が入力されていません。")
+
+    api_client = client or create_client()
 
     try:
-        routing_response = choose_tool(
-            client,
-            user_input,
-        )
+        routing_response = choose_tool(api_client, question)
         tool_call = get_tool_call(routing_response)
-
-        print(f"選択された処理: {tool_call.name}")
-
-        tool_output = execute_tool(
-            client,
-            tool_call,
-        )
+        tool_output = execute_tool(api_client, tool_call)
         tool_result = json.loads(tool_output)
-
+    except OpenAIError as error:
+        raise WorkflowServiceError(
+            "OpenAI APIへの接続または処理に失敗しました。"
+        ) from error
     except (
         ValueError,
         TypeError,
         KeyError,
+        OSError,
         json.JSONDecodeError,
         sympy.SympifyError,
     ) as error:
+        raise WorkflowInputError(str(error)) from error
+
+    result = {
+        "tool": tool_call.name,
+        "tool_result": tool_result,
+        "answer": None,
+        "final_model_called": False,
+    }
+
+    if (
+        tool_call.name == "search_math_pdf"
+        and tool_result["status"] == "unanswerable"
+    ):
+        result["answer"] = tool_result["message"]
+        return result
+
+    try:
+        final_response = create_final_response(
+            api_client,
+            routing_response,
+            tool_call,
+            tool_output,
+        )
+    except OpenAIError as error:
+        raise WorkflowServiceError(
+            "最終回答の生成に失敗しました。"
+        ) from error
+
+    result["answer"] = final_response.output_text
+    result["final_model_called"] = True
+    return result
+
+def main():
+    user_input = input("質問を入力してください: ").strip()
+
+    try:
+        result = run_workflow(user_input)
+    except WorkflowError as error:
         print("処理結果:")
         print(f"このワークフローでは処理できません: {error}")
         return
 
-    if tool_call.name == "search_math_pdf":
+    print(f"選択された処理: {result['tool']}")
+    tool_result = result["tool_result"]
+
+    if result["tool"] == "search_math_pdf":
         print(
             "検索用英語:",
             tool_result["search_question"],
@@ -327,7 +390,7 @@ def main():
 
         if tool_result["status"] == "unanswerable":
             print("回答:")
-            print(tool_result["message"])
+            print(result["answer"])
             return
 
         print("検索根拠:")
@@ -343,15 +406,8 @@ def main():
             )
             print(f"   抜粋: {preview}...")
 
-    final_response = create_final_response(
-        client,
-        routing_response,
-        tool_call,
-        tool_output,
-    )
-
     print("回答:")
-    print(final_response.output_text)
+    print(result["answer"])
 
 
 if __name__ == "__main__":
