@@ -34,13 +34,24 @@ end_page = (
     else len(reader.pages)
 )
 
-page_texts = []
+chunk_sources = []
+
 for page_index in range(START_PAGE, end_page):
     text = reader.pages[page_index].extract_text() or ""
-    page_texts.append(text)
+    page_chunks = split_text(text)
 
-section_text = "\n".join(page_texts)
-chunks = split_text(section_text)
+    for chunk in page_chunks:
+        chunk_sources.append(
+            {
+                "pdf_page": page_index + 1,
+                "text": chunk,
+            }
+        )
+
+chunks = [
+    source["text"]
+    for source in chunk_sources
+]
 
 client = OpenAI()
 
@@ -64,14 +75,14 @@ for batch_start in range(0, len(chunks), BATCH_SIZE):
 records = [
     {
         "chunk_id": index,
-        "text": chunk,
+        "pdf_page": source["pdf_page"],
+        "text": source["text"],
         "embedding": embedding,
     }
-    for index, (chunk, embedding) in enumerate(
-        zip(chunks, chunk_embeddings)
+    for index, (source, embedding) in enumerate(
+        zip(chunk_sources, chunk_embeddings)
     )
 ]
-
 index_data = {
     "embedding_model": EMBEDDING_MODEL,
     "source_pdf": PDF_PATH.name,
