@@ -25,7 +25,7 @@ def cosine_similarity(vector_a, vector_b):
 
 client = OpenAI()
 
-question = "What is the canonical one-form on a cotangent bundle?"
+question = input("質問を入力してください: ")
 
 question_response = client.embeddings.create(
     model=index_data["embedding_model"],
