@@ -8,6 +8,8 @@ from openai import OpenAI
 INDEX_PATH = Path("data/rag_index.json")
 QUESTIONS_PATH = Path("evaluation/questions.json")
 TOP_K = 3
+QUESTION_FIELD = "question_ja"
+TRANSLATION_MODEL = "gpt-4.1-mini"
 
 def cosine_similarity(vector_a, vector_b):
     dot_product = sum(
@@ -31,10 +33,36 @@ print(f"評価質問数: {len(evaluation_questions)}")
 
 client = OpenAI()
 
-question_texts = [
-    item["question"]
-    for item in evaluation_questions
-]
+def translate_for_retrieval(question):
+    response = client.responses.create(
+        model=TRANSLATION_MODEL,
+        instructions=(
+            "Translate the Japanese mathematical question into English "
+            "for searching an English mathematics textbook. "
+            "Preserve mathematical terminology exactly. "
+            "In this context, translate グロモフ面積 as Gromov area, "
+            "not Gromov width. Translate 完全ラグランジュ as exact "
+            "Lagrangian, not complete Lagrangian. "
+            "Output only the English translation."
+        ),
+        input=question,
+    )
+
+    return response.output_text.strip()
+question_texts = []
+
+for item in evaluation_questions:
+    original_question = item[QUESTION_FIELD]
+    translated_question = translate_for_retrieval(
+        original_question
+    )
+
+    question_texts.append(translated_question)
+
+    print()
+    print(f"ID: {item['id']}")
+    print(f"日本語: {original_question}")
+    print(f"検索用英語: {translated_question}")
 
 embedding_response = client.embeddings.create(
     model=index_data["embedding_model"],

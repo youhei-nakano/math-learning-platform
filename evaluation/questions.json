@@ -2,51 +2,61 @@
   {
     "id": "canonical_one_form",
     "question": "What is the canonical one-form on a cotangent bundle?",
+    "question_ja": "余接束上の正準1形式とは何ですか？",
     "expected_pdf_pages": [32, 33]
   },
   {
     "id": "darboux_theorem",
     "question": "What does Darboux's theorem say about symplectic forms?",
+    "question_ja": "ダルブーの定理はシンプレクティック形式について何を述べていますか？",
     "expected_pdf_pages": [40, 41]
   },
   {
     "id": "gromov_non_squeezing",
     "question": "What does Gromov's non-squeezing theorem state?",
+    "question_ja": "グロモフの非圧縮定理は何を主張していますか？",
     "expected_pdf_pages": [42]
   },
   {
     "id": "symplectic_even_dimension",
     "question": "Why must a symplectic manifold have even dimension?",
+    "question_ja": "シンプレクティック多様体はなぜ偶数次元でなければならないのですか？",
     "expected_pdf_pages": [34]
   },
   {
     "id": "gromov_radius",
     "question": "What is the Gromov radius of a symplectic manifold?",
+    "question_ja": "シンプレクティック多様体のグロモフ半径とは何ですか？",
     "expected_pdf_pages": [42]
   },
   {
     "id": "symplectic_diffeomorphism",
     "question": "What is a symplectic diffeomorphism?",
+    "question_ja": "シンプレクティック微分同相写像とは何ですか？",
     "expected_pdf_pages": [42]
   },
   {
     "id": "darboux_basis",
     "question": "What is a Darboux basis of a symplectic vector space?",
+    "question_ja": "シンプレクティックベクトル空間のダルブー基底とは何ですか？",
     "expected_pdf_pages": [37]
   },
   {
     "id": "cotangent_bundle_chart",
     "question": "What is a cotangent bundle chart of a Lagrangian submanifold?",
+    "question_ja": "ラグランジュ部分多様体の余接束チャートとは何ですか？",
     "expected_pdf_pages": [76]
   },
   {
     "id": "symplectic_ball",
     "question": "What is a symplectic ball and what is its Gromov area?",
+    "question_ja": "シンプレクティック球とそのグロモフ面積とは何ですか？",
     "expected_pdf_pages": [120]
   },
   {
     "id": "no_exact_lagrangian_in_cn",
     "question": "Can there be an exact Lagrangian embedding in complex Euclidean space?",
+    "question_ja": "複素ユークリッド空間に完全ラグランジュ埋め込みは存在しますか？",
     "expected_pdf_pages": [461]
   }
 ]

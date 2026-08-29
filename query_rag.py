@@ -5,6 +5,7 @@ from pathlib import Path
 from openai import OpenAI
 
 INDEX_PATH = Path("data/rag_index.json")
+TRANSLATION_MODEL = "gpt-4.1-mini"
 
 with INDEX_PATH.open("r", encoding="utf-8") as file:
     index_data = json.load(file)
@@ -25,11 +26,32 @@ def cosine_similarity(vector_a, vector_b):
 
 client = OpenAI()
 
+def translate_for_retrieval(question):
+    response = client.responses.create(
+        model=TRANSLATION_MODEL,
+        instructions=(
+            "Translate the Japanese mathematical question into English "
+            "for searching an English mathematics textbook. "
+            "Preserve mathematical terminology exactly. "
+            "In this context, translate グロモフ面積 as Gromov area, "
+            "not Gromov width. Translate 完全ラグランジュ as exact "
+            "Lagrangian, not complete Lagrangian. "
+            "Output only the English translation."
+        ),
+        input=question,
+    )
+
+    return response.output_text.strip()
+
 question = input("質問を入力してください: ")
+
+search_question = translate_for_retrieval(question)
+
+print(f"検索用英語: {search_question}")
 
 question_response = client.embeddings.create(
     model=index_data["embedding_model"],
-    input=question,
+    input=search_question,
 )
 
 question_embedding = question_response.data[0].embedding
