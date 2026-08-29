@@ -104,6 +104,25 @@ retrieved_pages = [
     for index in top_record_indices
 ]
 
+print("検索根拠:")
+
+for rank, (record_index, score) in enumerate(
+    zip(top_record_indices, top_similarities),
+    start=1,
+):
+    record = records[record_index]
+
+    preview = " ".join(
+    record["text"].split()
+    )[:120]
+
+    print(
+        f"{rank}. PDF p. {record['pdf_page']} "
+        f"/ 類似度 {score:.4f}"
+    )
+
+    print(f"   抜粋: {preview}...")
+
 print("参照PDFページ:", retrieved_pages)
 
 context = "\n\n---\n\n".join(
