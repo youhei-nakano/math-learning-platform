@@ -1,0 +1,52 @@
+[
+  {
+    "id": "canonical_one_form",
+    "question": "What is the canonical one-form on a cotangent bundle?",
+    "expected_pdf_pages": [32, 33]
+  },
+  {
+    "id": "darboux_theorem",
+    "question": "What does Darboux's theorem say about symplectic forms?",
+    "expected_pdf_pages": [40, 41]
+  },
+  {
+    "id": "gromov_non_squeezing",
+    "question": "What does Gromov's non-squeezing theorem state?",
+    "expected_pdf_pages": [42]
+  },
+  {
+    "id": "symplectic_even_dimension",
+    "question": "Why must a symplectic manifold have even dimension?",
+    "expected_pdf_pages": [34]
+  },
+  {
+    "id": "gromov_radius",
+    "question": "What is the Gromov radius of a symplectic manifold?",
+    "expected_pdf_pages": [42]
+  },
+  {
+    "id": "symplectic_diffeomorphism",
+    "question": "What is a symplectic diffeomorphism?",
+    "expected_pdf_pages": [42]
+  },
+  {
+    "id": "darboux_basis",
+    "question": "What is a Darboux basis of a symplectic vector space?",
+    "expected_pdf_pages": [37]
+  },
+  {
+    "id": "cotangent_bundle_chart",
+    "question": "What is a cotangent bundle chart of a Lagrangian submanifold?",
+    "expected_pdf_pages": [76]
+  },
+  {
+    "id": "symplectic_ball",
+    "question": "What is a symplectic ball and what is its Gromov area?",
+    "expected_pdf_pages": [120]
+  },
+  {
+    "id": "no_exact_lagrangian_in_cn",
+    "question": "Can there be an exact Lagrangian embedding in complex Euclidean space?",
+    "expected_pdf_pages": [461]
+  }
+]
