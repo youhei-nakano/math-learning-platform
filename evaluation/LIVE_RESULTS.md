@@ -2,4 +2,4 @@
 
 **Not run.**
 
-No live-LLM JSONL records were supplied.
+実LLM JSONLがないため未実行です (No live-LLM records).

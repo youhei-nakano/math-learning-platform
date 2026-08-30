@@ -1,2 +1,2 @@
 status,reason
-not_run,No live-LLM JSONL records were supplied.
+not_run,実LLM JSONLがないため未実行です (No live-LLM records).

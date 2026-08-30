@@ -57,7 +57,7 @@ def aggregate(paths):
         return {
             "schemaVersion": 1,
             "status": "not_run",
-            "reason": "No live-LLM JSONL records were supplied.",
+            "reason": "実LLM JSONLがないため未実行です (No live-LLM records).",
             "generatedAt": datetime.now(timezone.utc).isoformat(),
             "experiments": [],
         }
@@ -141,8 +141,15 @@ def main():
     parser.add_argument("--json", required=True)
     parser.add_argument("--csv", required=True)
     parser.add_argument("--markdown", required=True)
+    parser.add_argument("--app-json")
     args = parser.parse_args()
-    write_reports(aggregate(args.inputs), args.json, args.csv, args.markdown)
+    payload = aggregate(args.inputs)
+    write_reports(payload, args.json, args.csv, args.markdown)
+    if args.app_json:
+        Path(args.app_json).parent.mkdir(parents=True, exist_ok=True)
+        Path(args.app_json).write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        )
 
 
 if __name__ == "__main__":
