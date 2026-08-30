@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "status": "not_run",
-  "reason": "OPENAI_API_KEYが実行環境に設定されていないため、実LLM評価は未実行です。",
-  "generatedAt": "2026-08-31T00:00:00+09:00",
+  "reason": "実LLM JSONLがないため未実行です (No live-LLM records).",
+  "generatedAt": "2026-08-30T23:11:48.413856+00:00",
   "experiments": []
 }
