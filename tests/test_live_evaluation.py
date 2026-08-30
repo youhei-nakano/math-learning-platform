@@ -13,6 +13,7 @@ from evaluation.live_runner import (
     run,
     run_live_case,
 )
+from evaluation.regrade_results import regrade
 from evaluation.report_live import aggregate
 from evaluation.run_research import load_dataset
 from evaluation.validate_dataset import validate_dataset
@@ -96,6 +97,31 @@ class GradingTests(unittest.TestCase):
             ]
         )
         self.assertFalse(grade_answer(case, "42")["correct"])
+        self.assertTrue(
+            grade_answer(case, "Insufficient evidence in the supplied excerpts.")[
+                "correct"
+            ]
+        )
+
+    def test_regrading_preserves_raw_input_and_writes_versioned_copy(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "raw.jsonl"
+            output = Path(directory) / "regraded.jsonl"
+            record = {
+                "case_id": "unanswerable-prime-025",
+                "answer": "Insufficient evidence in the supplied excerpts.",
+                "citations": [],
+                "answer_correct": False,
+                "quality": {},
+            }
+            original = json.dumps(record) + "\n"
+            source.write_text(original)
+            result = regrade(source, output, DATASET)
+            self.assertEqual(source.read_text(), original)
+            self.assertTrue(result[0]["answer_correct"])
+            self.assertEqual(
+                result[0]["quality"]["grading_version"], "deterministic-v2"
+            )
 
 
 class LiveRunnerTests(unittest.TestCase):

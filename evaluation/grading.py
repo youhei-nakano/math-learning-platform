@@ -7,6 +7,7 @@ DECLINE_MARKERS = (
     "cannot determine",
     "not in the provided",
     "insufficient information",
+    "insufficient evidence",
 )
 
 
