@@ -1,5 +1,7 @@
 # OpenAI API Sandbox: Mathematics Research Workflow
 
+[日本語の研究・再現手順](README_JA.md) | [English research guide](README_EN.md)
+
 A learning repository for building a grounded mathematics assistant with the
 OpenAI Responses API, local PDF retrieval, guarded symbolic computation, and
 small agent workflows.
@@ -20,6 +22,7 @@ the final portfolio product.
 - a single-router mathematics workflow
 - automated retrieval, answerability, and tool-routing evaluation
 - user-facing error handling
+- bounded OpenAI request timeout, one retry, and empty-response rejection
 - a minimal local browser UI using the Python standard library
 - OCR auditing and explicit, one-page Vision transcription
 - a minimal MCP mathematics server
@@ -96,6 +99,8 @@ python ui_app.py
 ```
 
 Then open `http://127.0.0.1:8000`. The server binds only to the local machine.
+The submit button is disabled while a request is in progress to reduce duplicate
+submissions.
 
 Offline unit tests:
 
@@ -189,3 +194,25 @@ grows. Failed retrieval cases are retained as improvement targets.
 
 See [docs/architecture.md](docs/architecture.md) and
 [docs/evaluation.md](docs/evaluation.md) for design and evaluation details.
+
+The newer offline research harness is documented in
+[docs/research_architecture.md](docs/research_architecture.md). Historical
+numbers above are separated from newly generated results in
+[docs/baseline.md](docs/baseline.md); they were not rerun during this work.
+
+## Expanded evaluation and live opt-in
+
+The `demo-v2` set contains 27 original CC0 cases across 14 domain labels: 24
+answerable cases and 3 deliberately unanswerable cases. Regenerate and validate
+the PDFs, hashes, pages, and chunk references with:
+
+```zsh
+.venv/bin/python evaluation/datasets/demo-v2/generate_fixtures.py
+.venv/bin/python evaluation/validate_dataset.py evaluation/datasets/demo-v2/dataset.json
+```
+
+Real model evaluation is separate from deterministic CI. It requires explicit
+opt-in, an environment-only API key, and hard cost limits. See
+[docs/live_evaluation.md](docs/live_evaluation.md). Live evaluation is **Not run**
+unless measured JSONL records are present; missing measurements are never shown as
+zero.
