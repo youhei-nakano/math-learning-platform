@@ -73,6 +73,8 @@ class LiveConfig:
             raise ValueError("max_question_cost_usd must be in (0, 0.20]")
         if not 1 <= self.trials <= 3 or not 0 <= self.retries <= 2:
             raise ValueError("trials/retries exceeds the safety limit")
+        if not 5 <= self.timeout_seconds <= 120:
+            raise ValueError("timeout_seconds must be between 5 and 120")
         return self
 
 
@@ -304,8 +306,18 @@ def run_live_case(case, chunks, config, client, experiment_id, trial=1):
         }
 
 
-def run(dataset_path, output_path, config, client, case_ids=None, retry_failed=False):
+def run(
+    dataset_path,
+    output_path,
+    config,
+    client,
+    case_ids=None,
+    retry_failed=False,
+    limit=None,
+):
     config.validate()
+    if limit is not None and not 1 <= limit <= 27:
+        raise ValueError("limit must be between 1 and 27")
     estimated_case_cost = estimated_question_cost(config)
     if estimated_case_cost > config.max_question_cost_usd:
         raise ValueError("configured call bound exceeds the per-question cost limit")
@@ -339,9 +351,13 @@ def run(dataset_path, output_path, config, client, case_ids=None, retry_failed=F
     total_cost = sum((item.get("usage", {}).get("cost_usd") or 0) for item in prior)
     with destination.open("a", encoding="utf-8") as stream:
         for trial in range(1, config.trials + 1):
+            selected_count = 0
             for case in dataset["cases"]:
                 if case_ids and case["id"] not in case_ids:
                     continue
+                if limit is not None and selected_count >= limit:
+                    break
+                selected_count += 1
                 if (case["id"], trial) in complete:
                     continue
                 if total_cost + estimated_case_cost > config.max_total_cost_usd:
@@ -388,10 +404,16 @@ def main():
     )
     parser.add_argument("--output", required=True)
     parser.add_argument("--model", default=DEFAULT_MODEL)
-    parser.add_argument("--max-total-cost-usd", type=float, default=5.0)
+    parser.add_argument(
+        "--max-total-cost-usd",
+        type=float,
+        default=float(os.environ.get("MAX_EVAL_COST_USD", "5.0")),
+    )
     parser.add_argument("--max-question-cost-usd", type=float, default=0.20)
     parser.add_argument("--max-output-tokens", type=int, default=600)
     parser.add_argument("--trials", type=int, default=1)
+    parser.add_argument("--timeout-seconds", type=float, default=45.0)
+    parser.add_argument("--limit", type=int)
     parser.add_argument("--case-id", action="append", dest="case_ids")
     parser.add_argument("--retry-failed", action="store_true")
     args = parser.parse_args()
@@ -405,6 +427,7 @@ def main():
         mode=args.mode,
         model=args.model,
         max_output_tokens=args.max_output_tokens,
+        timeout_seconds=args.timeout_seconds,
         max_total_cost_usd=args.max_total_cost_usd,
         max_question_cost_usd=args.max_question_cost_usd,
         trials=args.trials,
@@ -418,6 +441,7 @@ def main():
             client,
             set(args.case_ids or []),
             args.retry_failed,
+            args.limit,
         )
     )
 

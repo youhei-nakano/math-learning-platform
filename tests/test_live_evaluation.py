@@ -188,6 +188,12 @@ class LiveRunnerTests(unittest.TestCase):
             LiveConfig("live-single", max_question_cost_usd=0.21).validate()
         self.assertGreater(estimated_question_cost(LiveConfig("live-multi")), 0)
 
+    def test_problem_limit_runs_only_requested_count(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "limited.jsonl"
+            run(DATASET, output, LiveConfig("live-single"), FakeClient(), limit=2)
+            self.assertEqual(len(output.read_text().splitlines()), 2)
+
 
 if __name__ == "__main__":
     unittest.main()
