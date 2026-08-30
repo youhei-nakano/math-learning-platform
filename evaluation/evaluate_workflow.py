@@ -17,7 +17,6 @@ from math_research_workflow import (
     get_tool_call,
 )
 
-
 CASES_PATH = Path("evaluation/workflow_cases.json")
 RESULTS_PATH = Path("evaluation/workflow_results.json")
 

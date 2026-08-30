@@ -4,7 +4,6 @@ import re
 import sympy
 from openai import OpenAI
 
-
 MAX_EXPRESSION_LENGTH = 200
 
 
@@ -66,8 +65,7 @@ tool_call = next(
     (
         item
         for item in response.output
-        if item.type == "function_call"
-        and item.name == "differentiate_polynomial"
+        if item.type == "function_call" and item.name == "differentiate_polynomial"
     ),
     None,
 )

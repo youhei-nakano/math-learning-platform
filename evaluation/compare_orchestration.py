@@ -1,7 +1,6 @@
 import json
 from pathlib import Path
 
-
 SINGLE_PATH = Path("evaluation/workflow_results.json")
 MULTI_PATH = Path("evaluation/multi_agent_results.json")
 

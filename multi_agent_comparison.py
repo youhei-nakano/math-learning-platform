@@ -7,7 +7,6 @@ from pathlib import Path
 
 from agents import Agent, Runner
 
-
 CASES_PATH = Path("evaluation/workflow_cases.json")
 OUTPUT_PATH = Path("evaluation/multi_agent_results.json")
 MODEL = "gpt-4.1-mini"

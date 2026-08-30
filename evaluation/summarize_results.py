@@ -1,7 +1,6 @@
 import json
 from pathlib import Path
 
-
 BASELINE_PATH = Path("evaluation/baseline_results.json")
 WORKFLOW_PATH = Path("evaluation/workflow_results.json")
 

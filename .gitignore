@@ -13,3 +13,12 @@ __pycache__/
 
 # RAGで使用するローカル文書
 data/
+
+# Reproducible evaluation outputs and sensitive study material
+evaluation/runs/*
+!evaluation/runs/integration-single.jsonl
+!evaluation/runs/integration-multi.jsonl
+evaluation/private/
+participant-data/
+user-pdfs/
+indexes/

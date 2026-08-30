@@ -4,7 +4,6 @@ from pathlib import Path
 from openai import OpenAI
 from pypdf import PdfReader
 
-
 PDF_PATH = Path("data/source.pdf")
 INDEX_PATH = Path("data/rag_index.json")
 EMBEDDING_MODEL = "text-embedding-3-small"
@@ -30,11 +29,7 @@ def split_text(text, chunk_size=CHUNK_SIZE, overlap=CHUNK_OVERLAP):
 
 
 reader = PdfReader(PDF_PATH)
-end_page = (
-    END_PAGE
-    if END_PAGE is not None
-    else len(reader.pages)
-)
+end_page = END_PAGE if END_PAGE is not None else len(reader.pages)
 
 chunk_sources = []
 
@@ -50,10 +45,7 @@ for page_index in range(START_PAGE, end_page):
             }
         )
 
-chunks = [
-    source["text"]
-    for source in chunk_sources
-]
+chunks = [source["text"] for source in chunk_sources]
 
 client = OpenAI()
 
@@ -68,9 +60,7 @@ for batch_start in range(0, len(chunks), BATCH_SIZE):
         input=batch_chunks,
     )
 
-    chunk_embeddings.extend(
-        item.embedding for item in embedding_response.data
-    )
+    chunk_embeddings.extend(item.embedding for item in embedding_response.data)
 
     print(f"Embedding作成済み: {batch_end}/{len(chunks)}")
 
@@ -81,9 +71,7 @@ records = [
         "text": source["text"],
         "embedding": embedding,
     }
-    for index, (source, embedding) in enumerate(
-        zip(chunk_sources, chunk_embeddings)
-    )
+    for index, (source, embedding) in enumerate(zip(chunk_sources, chunk_embeddings))
 ]
 index_data = {
     "embedding_model": EMBEDDING_MODEL,
@@ -101,5 +89,3 @@ with INDEX_PATH.open("w", encoding="utf-8") as file:
 
 print(f"保存先: {INDEX_PATH}")
 print(f"保存したチャンク数: {len(records)}")
-
-

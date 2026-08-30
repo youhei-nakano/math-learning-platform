@@ -5,7 +5,6 @@ from urllib.parse import parse_qs
 
 from math_research_workflow import WorkflowError, run_workflow
 
-
 MAX_REQUEST_BYTES = 10_000
 
 
@@ -28,7 +27,7 @@ def render_page(content="質問を入力してください。", question=""):
 <body>
   <h1>Math Research Workflow</h1>
   <p>PDF文献検索または安全制限付き多項式微分を選択します。</p>
-  <form method="post">
+  <form method="post" onsubmit="const button=this.querySelector('button');button.disabled=true;button.textContent='処理中…';button.setAttribute('aria-busy','true')">
     <textarea name="question" maxlength="2000">{html.escape(question)}</textarea>
     <br><button type="submit">質問する</button>
   </form>
@@ -83,9 +82,7 @@ class WorkflowHandler(BaseHTTPRequestHandler):
             self.send_html(render_page("入力サイズが不正です。"), status=400)
             return
 
-        form = parse_qs(
-            self.rfile.read(length).decode("utf-8", errors="replace")
-        )
+        form = parse_qs(self.rfile.read(length).decode("utf-8", errors="replace"))
         question = form.get("question", [""])[0].strip()
 
         try:

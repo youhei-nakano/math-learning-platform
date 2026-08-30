@@ -16,16 +16,17 @@ records = index_data["records"]
 print(f"読み込んだチャンク数: {len(records)}")
 print(f"使用するEmbeddingモデル: {index_data['embedding_model']}")
 
+
 def cosine_similarity(vector_a, vector_b):
-    dot_product = sum(
-        a * b for a, b in zip(vector_a, vector_b)
-    )
+    dot_product = sum(a * b for a, b in zip(vector_a, vector_b))
     norm_a = math.sqrt(sum(a * a for a in vector_a))
     norm_b = math.sqrt(sum(b * b for b in vector_b))
 
     return dot_product / (norm_a * norm_b)
 
+
 client = OpenAI()
+
 
 def translate_for_retrieval(question):
     response = client.responses.create(
@@ -43,6 +44,7 @@ def translate_for_retrieval(question):
     )
 
     return response.output_text.strip()
+
 
 question = input("質問を入力してください: ")
 
@@ -75,10 +77,7 @@ top_record_indices = sorted(
     reverse=True,
 )[:top_k]
 
-top_similarities = [
-    similarities[index]
-    for index in top_record_indices
-]
+top_similarities = [similarities[index] for index in top_record_indices]
 
 print("検索された上位チャンク:", top_record_indices)
 print(
@@ -86,23 +85,13 @@ print(
     [round(score, 4) for score in top_similarities],
 )
 if top_similarities[0] < MIN_SIMILARITY:
-    print(
-        "判定: PDF内に十分近い根拠が見つかりませんでした。"
-    )
-    print(
-        "回答: このPDFの内容だけからは回答できません。"
-    )
+    print("判定: PDF内に十分近い根拠が見つかりませんでした。")
+    print("回答: このPDFの内容だけからは回答できません。")
     raise SystemExit
 
-retrieved_chunks = [
-    records[index]["text"]
-    for index in top_record_indices
-]
+retrieved_chunks = [records[index]["text"] for index in top_record_indices]
 
-retrieved_pages = [
-    records[index]["pdf_page"]
-    for index in top_record_indices
-]
+retrieved_pages = [records[index]["pdf_page"] for index in top_record_indices]
 
 print("検索根拠:")
 
@@ -112,14 +101,9 @@ for rank, (record_index, score) in enumerate(
 ):
     record = records[record_index]
 
-    preview = " ".join(
-    record["text"].split()
-    )[:120]
+    preview = " ".join(record["text"].split())[:120]
 
-    print(
-        f"{rank}. PDF p. {record['pdf_page']} "
-        f"/ 類似度 {score:.4f}"
-    )
+    print(f"{rank}. PDF p. {record['pdf_page']} / 類似度 {score:.4f}")
 
     print(f"   抜粋: {preview}...")
 

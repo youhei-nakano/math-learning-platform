@@ -9,7 +9,6 @@ from pypdf import PdfReader
 
 from math_research_workflow import create_client
 
-
 PDF_PATH = Path("data/source.pdf")
 OCR_OUTPUT_DIR = Path("data/ocr")
 VISION_MODEL = "gpt-4.1-mini"

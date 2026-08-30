@@ -2,7 +2,6 @@ from mcp.server import MCPServer
 
 from math_research_workflow import differentiate_polynomial
 
-
 mcp = MCPServer("guarded-math-tools")
 
 

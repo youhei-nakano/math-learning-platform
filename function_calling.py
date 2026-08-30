@@ -4,9 +4,11 @@ from openai import OpenAI
 
 client = OpenAI()
 
+
 def add_numbers(a, b):
 
     return a + b
+
 
 tools = [
     {

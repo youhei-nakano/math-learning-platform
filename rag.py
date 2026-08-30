@@ -1,9 +1,7 @@
 import math
-
 from pathlib import Path
 
 from openai import OpenAI
-
 from pypdf import PdfReader
 
 pdf_path = Path("data/source.pdf")
@@ -22,6 +20,7 @@ for page_index in range(start_page, end_page):
 
 section_text = "\n".join(page_texts)
 
+
 def split_text(text, chunk_size=1200, overlap=200):
     chunks = []
     start = 0
@@ -33,10 +32,9 @@ def split_text(text, chunk_size=1200, overlap=200):
 
     return chunks
 
+
 def cosine_similarity(vector_a, vector_b):
-    dot_product = sum(
-        a * b for a, b in zip(vector_a, vector_b)
-    )
+    dot_product = sum(a * b for a, b in zip(vector_a, vector_b))
     norm_a = math.sqrt(sum(a * a for a in vector_a))
     norm_b = math.sqrt(sum(b * b for b in vector_b))
 
@@ -50,9 +48,7 @@ embedding_response = client.embeddings.create(
     input=chunks,
 )
 
-chunk_embeddings = [
-    item.embedding for item in embedding_response.data
-]
+chunk_embeddings = [item.embedding for item in embedding_response.data]
 
 question = "What is the canonical one-form on a cotangent bundle?"
 
@@ -76,9 +72,7 @@ top_chunk_indices = sorted(
     reverse=True,
 )[:top_k]
 
-retrieved_chunks = [
-    chunks[index] for index in top_chunk_indices
-]
+retrieved_chunks = [chunks[index] for index in top_chunk_indices]
 
 context = "\n\n---\n\n".join(retrieved_chunks)
 

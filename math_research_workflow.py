@@ -7,13 +7,14 @@ from pathlib import Path
 import sympy
 from openai import OpenAI, OpenAIError
 
-
 INDEX_PATH = Path("data/rag_index.json")
 TRANSLATION_MODEL = "gpt-4.1-mini"
 WORKFLOW_MODEL = "gpt-4.1-mini"
 MIN_SIMILARITY = 0.52
 MAX_EXPRESSION_LENGTH = 200
 TOP_K = 3
+API_TIMEOUT_SECONDS = 30.0
+MAX_USER_INPUT_LENGTH = 2_000
 
 
 class WorkflowError(Exception):
@@ -34,17 +35,21 @@ class WorkflowServiceError(WorkflowError):
 
 def create_client():
     if not os.getenv("OPENAI_API_KEY"):
-        raise WorkflowConfigurationError(
-            "OPENAI_API_KEYが設定されていません。"
-        )
+        raise WorkflowConfigurationError("OPENAI_API_KEYが設定されていません。")
 
-    return OpenAI()
+    return OpenAI(timeout=API_TIMEOUT_SECONDS, max_retries=1)
+
+
+def require_output_text(response, operation):
+    output_text = getattr(response, "output_text", "")
+    if not isinstance(output_text, str) or not output_text.strip():
+        raise WorkflowServiceError(f"{operation}の応答が空でした。再試行してください。")
+    return output_text.strip()
+
 
 def load_rag_index():
     if not INDEX_PATH.exists():
-        raise FileNotFoundError(
-            f"RAGインデックスが見つかりません: {INDEX_PATH}"
-        )
+        raise FileNotFoundError(f"RAGインデックスが見つかりません: {INDEX_PATH}")
 
     with INDEX_PATH.open("r", encoding="utf-8") as file:
         index_data = json.load(file)
@@ -54,13 +59,12 @@ def load_rag_index():
 
     return index_data
 
+
 def cosine_similarity(vector_a, vector_b):
     if len(vector_a) != len(vector_b):
         raise ValueError("Embeddingの次元数が一致しません。")
 
-    dot_product = sum(
-        a * b for a, b in zip(vector_a, vector_b)
-    )
+    dot_product = sum(a * b for a, b in zip(vector_a, vector_b))
     norm_a = math.sqrt(sum(a * a for a in vector_a))
     norm_b = math.sqrt(sum(b * b for b in vector_b))
 
@@ -68,6 +72,7 @@ def cosine_similarity(vector_a, vector_b):
         raise ValueError("ゼロベクトルの類似度は計算できません。")
 
     return dot_product / (norm_a * norm_b)
+
 
 def differentiate_polynomial(expression):
     if not expression or len(expression) > MAX_EXPRESSION_LENGTH:
@@ -94,6 +99,7 @@ def differentiate_polynomial(expression):
     derivative = sympy.diff(parsed_expression, x)
     return str(derivative)
 
+
 def translate_for_retrieval(client, question):
     response = client.responses.create(
         model=TRANSLATION_MODEL,
@@ -109,7 +115,8 @@ def translate_for_retrieval(client, question):
         input=question,
     )
 
-    return response.output_text.strip()
+    return require_output_text(response, "検索語生成")
+
 
 def search_math_pdf(client, question):
     if not question or not question.strip():
@@ -171,6 +178,7 @@ def search_math_pdf(client, question):
         "evidence": evidence,
     }
 
+
 tools = [
     {
         "type": "function",
@@ -211,6 +219,7 @@ tools = [
     },
 ]
 
+
 def execute_tool(client, tool_call):
     arguments = json.loads(tool_call.arguments)
 
@@ -229,11 +238,10 @@ def execute_tool(client, tool_call):
             "derivative": derivative,
         }
     else:
-        raise ValueError(
-            f"許可されていないツールです: {tool_call.name}"
-        )
+        raise ValueError(f"許可されていないツールです: {tool_call.name}")
 
     return json.dumps(result, ensure_ascii=False)
+
 
 def choose_tool(client, user_input):
     return client.responses.create(
@@ -256,17 +264,12 @@ def choose_tool(client, user_input):
         parallel_tool_calls=False,
     )
 
+
 def get_tool_call(response):
-    tool_calls = [
-        item
-        for item in response.output
-        if item.type == "function_call"
-    ]
+    tool_calls = [item for item in response.output if item.type == "function_call"]
 
     if len(tool_calls) != 1:
-        raise ValueError(
-            "ツール選択は1件である必要があります。"
-        )
+        raise ValueError("ツール選択は1件である必要があります。")
 
     tool_call = tool_calls[0]
     allowed_tools = {
@@ -275,11 +278,10 @@ def get_tool_call(response):
     }
 
     if tool_call.name not in allowed_tools:
-        raise ValueError(
-            f"許可されていないツールです: {tool_call.name}"
-        )
+        raise ValueError(f"許可されていないツールです: {tool_call.name}")
 
     return tool_call
+
 
 def create_final_response(
     client,
@@ -313,6 +315,8 @@ def run_workflow(user_input, client=None):
     question = user_input.strip()
     if not question:
         raise WorkflowInputError("質問が入力されていません。")
+    if len(question) > MAX_USER_INPUT_LENGTH:
+        raise WorkflowInputError("質問は2000文字以内で入力してください。")
 
     api_client = client or create_client()
 
@@ -342,10 +346,7 @@ def run_workflow(user_input, client=None):
         "final_model_called": False,
     }
 
-    if (
-        tool_call.name == "search_math_pdf"
-        and tool_result["status"] == "unanswerable"
-    ):
+    if tool_call.name == "search_math_pdf" and tool_result["status"] == "unanswerable":
         result["answer"] = tool_result["message"]
         return result
 
@@ -357,13 +358,12 @@ def run_workflow(user_input, client=None):
             tool_output,
         )
     except OpenAIError as error:
-        raise WorkflowServiceError(
-            "最終回答の生成に失敗しました。"
-        ) from error
+        raise WorkflowServiceError("最終回答の生成に失敗しました。") from error
 
-    result["answer"] = final_response.output_text
+    result["answer"] = require_output_text(final_response, "最終回答生成")
     result["final_model_called"] = True
     return result
+
 
 def main():
     user_input = input("質問を入力してください: ").strip()
@@ -396,9 +396,7 @@ def main():
         print("検索根拠:")
 
         for item in tool_result["evidence"]:
-            preview = " ".join(
-                item["text"].split()
-            )[:120]
+            preview = " ".join(item["text"].split())[:120]
 
             print(
                 f"{item['rank']}. PDF p. {item['pdf_page']} "
