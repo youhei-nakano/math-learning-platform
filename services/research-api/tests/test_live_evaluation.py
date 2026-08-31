@@ -425,6 +425,33 @@ class LiveRunnerTests(unittest.TestCase):
         self.assertEqual(payload["status"], "not_run")
         self.assertEqual(payload["experiments"], [])
 
+    def test_live_report_deduplicates_retried_case(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "retry.jsonl"
+            base = {
+                "experiment_id": "e",
+                "case_id": "c",
+                "trial": 1,
+                "status": "failed",
+                "latency_seconds": 1,
+                "usage": {"cost_usd": 0, "total_tokens": 0},
+                "answer_correct": False,
+                "citation_precision": 0,
+                "citation_recall": 0,
+                "config": {"mode": "live-multi", "model": "mock"},
+                "dataset_version": "v",
+            }
+            success = {
+                **base,
+                "status": "success",
+                "answer_correct": True,
+                "orchestration_version": "multi-pipeline-v2",
+            }
+            path.write_text(json.dumps(base) + "\n" + json.dumps(success) + "\n")
+            payload = aggregate([path])
+            self.assertEqual(payload["experiments"][0]["overall"]["runs"], 1)
+            self.assertEqual(payload["experiments"][0]["overall"]["successes"], 1)
+
     def test_safety_limits_reject_excessive_budget(self):
         with self.assertRaises(ValueError):
             LiveConfig("live-single", max_total_cost_usd=5.01).validate()

@@ -17,6 +17,7 @@ def _stats(records):
         for name in ("improved", "unchanged", "regressed", "inconclusive")
     }
     revisions = [item for item in pipeline if item.get("revision_requested")]
+    applied = [item for item in pipeline if item.get("tutor_applied_revision")]
     return {
         "runs": len(records),
         "successes": len(successful),
@@ -35,6 +36,13 @@ def _stats(records):
             item.get("citation_recall", 0) for item in records
         )
         if records
+        else None,
+        "answerability_accuracy": statistics.mean(
+            item.get("answerable") == item.get("answerable_expected")
+            for item in records
+            if item.get("answerable_expected") is not None
+        )
+        if any(item.get("answerable_expected") is not None for item in records)
         else None,
         "latency_mean": statistics.mean(latencies) if latencies else None,
         "latency_median": statistics.median(latencies) if latencies else None,
@@ -67,18 +75,26 @@ def _stats(records):
         if revisions
         else None,
         "change_classifications": classifications if pipeline else None,
+        "revision_overhead_per_applied": {
+            field: statistics.mean(
+                item["revision_overhead"].get(field, 0) for item in applied
+            )
+            for field in ("duration_seconds", "total_tokens", "cost_usd")
+        }
+        if applied
+        else None,
     }
 
 
 def aggregate(paths):
-    records = []
+    raw_records = []
     for path in paths:
-        records.extend(
+        raw_records.extend(
             json.loads(line)
             for line in Path(path).read_text(encoding="utf-8").splitlines()
             if line.strip()
         )
-    if not records:
+    if not raw_records:
         return {
             "schemaVersion": 1,
             "status": "not_run",
@@ -86,6 +102,11 @@ def aggregate(paths):
             "generatedAt": datetime.now(timezone.utc).isoformat(),
             "experiments": [],
         }
+    latest = {}
+    for item in raw_records:
+        key = (item["experiment_id"], item["case_id"], item.get("trial", 1))
+        latest[key] = item
+    records = list(latest.values())
     experiments = []
     for experiment_id in sorted({item["experiment_id"] for item in records}):
         selected = [item for item in records if item["experiment_id"] == experiment_id]

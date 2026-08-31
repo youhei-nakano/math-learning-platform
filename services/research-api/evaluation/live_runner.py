@@ -374,6 +374,14 @@ def run_live_case(case, chunks, config, client, experiment_id, trial=1):
                 )
                 for key in ("input_tokens", "output_tokens", "cost_usd")
             }
+            revision_usage["total_tokens"] = (
+                revision_usage["input_tokens"] + revision_usage["output_tokens"]
+            )
+            revision_usage["duration_seconds"] = sum(
+                item["duration_ms"] / 1000
+                for item in trace
+                if item["role"] in {"verifier", "tutor"}
+            )
             pipeline_metrics = {
                 "retrieval_query_changed": any(
                     item["normalized_query"].strip().lower()
