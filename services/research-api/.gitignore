@@ -1,0 +1,24 @@
+# Python仮想環境
+.venv/
+
+# Pythonが自動生成するファイル
+__pycache__/
+*.pyc
+
+# APIキーなどの秘密情報
+.env
+
+# macOSが自動生成するファイル
+.DS_Store
+
+# RAGで使用するローカル文書
+data/
+
+# Reproducible evaluation outputs and sensitive study material
+evaluation/runs/*
+!evaluation/runs/integration-single.jsonl
+!evaluation/runs/integration-multi.jsonl
+evaluation/private/
+participant-data/
+user-pdfs/
+indexes/

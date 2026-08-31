@@ -1,0 +1,31 @@
+name: CI
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: pip install -r requirements-dev.txt
+      - run: ruff check .
+      - run: ruff format --check .
+      - run: python evaluation/datasets/demo-v1/generate_fixtures.py
+      - run: python evaluation/datasets/demo-v2/generate_fixtures.py
+      - run: python evaluation/validate_dataset.py evaluation/datasets/demo-v2/dataset.json
+      - run: python -m unittest discover -s tests -v
+      - name: Deterministic one-case smoke
+        run: >-
+          python evaluation/run_research.py
+          --dataset evaluation/datasets/demo-v2/dataset.json
+          --config evaluation/configs/single-hybrid-rerank.json
+          --output /tmp/deterministic-smoke.jsonl
+          --case-id arith-percent-001
+          --no-resume

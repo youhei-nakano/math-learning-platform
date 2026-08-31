@@ -1,0 +1,22 @@
+[
+  {
+    "id": "riemann_hypothesis",
+    "question_ja": "リーマン予想とは何ですか？"
+  },
+  {
+    "id": "photosynthesis",
+    "question_ja": "光合成はどのような仕組みですか？"
+  },
+  {
+    "id": "capital_of_france",
+    "question_ja": "フランスの首都はどこですか？"
+  },
+  {
+    "id": "quantum_entanglement",
+    "question_ja": "量子もつれとは何ですか？"
+  },
+  {
+    "id": "central_limit_theorem",
+    "question_ja": "中心極限定理とは何ですか？"
+  }
+]

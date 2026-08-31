@@ -1,0 +1,1111 @@
+{
+  "version": "demo-v2",
+  "license": "CC0-1.0; original fixtures generated locally",
+  "generation": {
+    "script": "evaluation/datasets/demo-v2/generate_fixtures.py",
+    "deterministic": true
+  },
+  "documents": [
+    {
+      "id": "arithmetic-algebra",
+      "title": "Arithmetic Algebra",
+      "path": "evaluation/datasets/demo-v2/pdfs/arithmetic-algebra.pdf",
+      "sha256": "650a8f135cd0d4c2fcd70ed67828271cbda3d6ac32eb9c347700f816c6ca671b",
+      "license": "CC0-1.0",
+      "pages": 2
+    },
+    {
+      "id": "functions-sequences",
+      "title": "Functions Sequences",
+      "path": "evaluation/datasets/demo-v2/pdfs/functions-sequences.pdf",
+      "sha256": "b1d8334d603de6c1bb6636986f0e7585c4ec45fdea58d3e0b29276b9cebb262a",
+      "license": "CC0-1.0",
+      "pages": 2
+    },
+    {
+      "id": "calculus-foundations",
+      "title": "Calculus Foundations",
+      "path": "evaluation/datasets/demo-v2/pdfs/calculus-foundations.pdf",
+      "sha256": "315435362ff426f7b8e5da95882a58254fa35e934ce64615c6da4dd6cc20e50a",
+      "license": "CC0-1.0",
+      "pages": 2
+    },
+    {
+      "id": "linear-foundations",
+      "title": "Linear Foundations",
+      "path": "evaluation/datasets/demo-v2/pdfs/linear-foundations.pdf",
+      "sha256": "ec585a2e54d2af01a33782c53327587a8862f38d07607c625fa17d1a220db686",
+      "license": "CC0-1.0",
+      "pages": 2
+    },
+    {
+      "id": "probability-statistics",
+      "title": "Probability Statistics",
+      "path": "evaluation/datasets/demo-v2/pdfs/probability-statistics.pdf",
+      "sha256": "3ce9b43466c3a42392e5fdcb4a16e0cbe83ad26bdb4177af81257e33ef595377",
+      "license": "CC0-1.0",
+      "pages": 2
+    },
+    {
+      "id": "geometry-word-problems",
+      "title": "Geometry Word Problems",
+      "path": "evaluation/datasets/demo-v2/pdfs/geometry-word-problems.pdf",
+      "sha256": "d1d72559383443fdcb4c235685b6ca37fe9ab455bec80a165318bf7df6a3305d",
+      "license": "CC0-1.0",
+      "pages": 2
+    }
+  ],
+  "cases": [
+    {
+      "question_id": "arith-percent-001",
+      "question": "A 20 percent discount is applied to 250. What is the discounted price?",
+      "domain": "arithmetic",
+      "difficulty": "easy",
+      "answer_type": "numeric",
+      "answerable": true,
+      "expected_answer": "200",
+      "acceptable_variants": [
+        "200.0"
+      ],
+      "grading_rubric": "Compute 250*0.80.",
+      "required_reasoning": [
+        "convert percent to multiplier",
+        "multiply"
+      ],
+      "source_document_ids": [
+        "arithmetic-algebra"
+      ],
+      "source_pages": [
+        {
+          "document_id": "arithmetic-algebra",
+          "page_number": 1
+        }
+      ],
+      "required_chunk_ids": [
+        "arithmetic-algebra:650a8f13:1:0"
+      ],
+      "expected_citations": [
+        {
+          "document_id": "arithmetic-algebra",
+          "page_number": 1
+        }
+      ],
+      "tags": [
+        "percent"
+      ],
+      "dataset_version": "demo-v2",
+      "auto_gradable": true
+    },
+    {
+      "question_id": "arith-proportion-002",
+      "question": "Solve the proportion 3/5 = x/20.",
+      "domain": "arithmetic",
+      "difficulty": "medium",
+      "answer_type": "numeric",
+      "answerable": true,
+      "expected_answer": "12",
+      "acceptable_variants": [
+        "x=12"
+      ],
+      "grading_rubric": "Use cross multiplication.",
+      "required_reasoning": [
+        "cross multiply",
+        "solve"
+      ],
+      "source_document_ids": [
+        "arithmetic-algebra"
+      ],
+      "source_pages": [
+        {
+          "document_id": "arithmetic-algebra",
+          "page_number": 1
+        }
+      ],
+      "required_chunk_ids": [
+        "arithmetic-algebra:650a8f13:1:0"
+      ],
+      "expected_citations": [
+        {
+          "document_id": "arithmetic-algebra",
+          "page_number": 1
+        }
+      ],
+      "tags": [
+        "proportion"
+      ],
+      "dataset_version": "demo-v2",
+      "auto_gradable": true
+    },
+    {
+      "question_id": "alg-linear-003",
+      "question": "Solve 3x + 5 = 20.",
+      "domain": "algebra",
+      "difficulty": "easy",
+      "answer_type": "numeric",
+      "answerable": true,
+      "expected_answer": "5",
+      "acceptable_variants": [
+        "x=5"
+      ],
+      "grading_rubric": "Isolate x.",
+      "required_reasoning": [
+        "subtract 5",
+        "divide by 3"
+      ],
+      "source_document_ids": [
+        "arithmetic-algebra"
+      ],
+      "source_pages": [
+        {
+          "document_id": "arithmetic-algebra",
+          "page_number": 2
+        }
+      ],
+      "required_chunk_ids": [
+        "arithmetic-algebra:650a8f13:2:0"
+      ],
+      "expected_citations": [
+        {
+          "document_id": "arithmetic-algebra",
+          "page_number": 2
+        }
+      ],
+      "tags": [
+        "linear-equation"
+      ],
+      "dataset_version": "demo-v2",
+      "auto_gradable": true
+    },
+    {
+      "question_id": "alg-quadratic-004",
+      "question": "Which are the roots of x^2 - 5x + 6 = 0? A) 1,6 B) 2,3 C) -2,-3",
+      "domain": "algebra",
+      "difficulty": "hard",
+      "answer_type": "multiple_choice",
+      "answerable": true,
+      "expected_answer": "B",
+      "acceptable_variants": [
+        "B) 2,3",
+        "2 and 3",
+        "2,3"
+      ],
+      "grading_rubric": "Choose the two roots whose sum is 5 and product is 6.",
+      "required_reasoning": [
+        "factor or quadratic formula",
+        "select option"
+      ],
+      "source_document_ids": [
+        "arithmetic-algebra"
+      ],
+      "source_pages": [
+        {
+          "document_id": "arithmetic-algebra",
+          "page_number": 2
+        }
+      ],
+      "required_chunk_ids": [
+        "arithmetic-algebra:650a8f13:2:0"
+      ],
+      "expected_citations": [
+        {
+          "document_id": "arithmetic-algebra",
+          "page_number": 2
+        }
+      ],
+      "tags": [
+        "quadratic"
+      ],
+      "dataset_version": "demo-v2",
+      "auto_gradable": true
+    },
+    {
+      "question_id": "func-slope-005",
+      "question": "Find the slope through (1,2) and (5,10).",
+      "domain": "functions",
+      "difficulty": "easy",
+      "answer_type": "numeric",
+      "answerable": true,
+      "expected_answer": "2",
+      "acceptable_variants": [
+        "2.0"
+      ],
+      "grading_rubric": "Compute (10-2)/(5-1).",
+      "required_reasoning": [
+        "difference quotient"
+      ],
+      "source_document_ids": [
+        "functions-sequences"
+      ],
+      "source_pages": [
+        {
+          "document_id": "functions-sequences",
+          "page_number": 1
+        }
+      ],
+      "required_chunk_ids": [
+        "functions-sequences:b1d8334d:1:0"
+      ],
+      "expected_citations": [
+        {
+          "document_id": "functions-sequences",
+          "page_number": 1
+        }
+      ],
+      "tags": [
+        "slope"
+      ],
+      "dataset_version": "demo-v2",
+      "auto_gradable": true
+    },
+    {
+      "question_id": "func-compose-006",
+      "question": "If f(x)=x+1 and g(x)=2x, compute (f composed with g)(3).",
+      "domain": "functions",
+      "difficulty": "medium",
+      "answer_type": "numeric",
+      "answerable": true,
+      "expected_answer": "7",
+      "acceptable_variants": [
+        "7.0"
+      ],
+      "grading_rubric": "Evaluate g(3), then f of that value.",
+      "required_reasoning": [
+        "evaluate inner function",
+        "evaluate outer function"
+      ],
+      "source_document_ids": [
+        "functions-sequences"
+      ],
+      "source_pages": [
+        {
+          "document_id": "functions-sequences",
+          "page_number": 1
+        }
+      ],
+      "required_chunk_ids": [
+        "functions-sequences:b1d8334d:1:0"
+      ],
+      "expected_citations": [
+        {
+          "document_id": "functions-sequences",
+          "page_number": 1
+        }
+      ],
+      "tags": [
+        "composition"
+      ],
+      "dataset_version": "demo-v2",
+      "auto_gradable": true
+    },
+    {
+      "question_id": "seq-arithmetic-007",
+      "question": "An arithmetic sequence has a1=4 and d=3. Find a10.",
+      "domain": "sequences",
+      "difficulty": "easy",
+      "answer_type": "numeric",
+      "answerable": true,
+      "expected_answer": "31",
+      "acceptable_variants": [
+        "31.0"
+      ],
+      "grading_rubric": "Use a1+(n-1)d.",
+      "required_reasoning": [
+        "substitute n=10"
+      ],
+      "source_document_ids": [
+        "functions-sequences"
+      ],
+      "source_pages": [
+        {
+          "document_id": "functions-sequences",
+          "page_number": 2
+        }
+      ],
+      "required_chunk_ids": [
+        "functions-sequences:b1d8334d:2:0"
+      ],
+      "expected_citations": [
+        {
+          "document_id": "functions-sequences",
+          "page_number": 2
+        }
+      ],
+      "tags": [
+        "arithmetic-sequence"
+      ],
+      "dataset_version": "demo-v2",
+      "auto_gradable": true
+    },
+    {
+      "question_id": "seq-geometric-008",
+      "question": "A geometric sequence has a1=2 and r=3. Find a5.",
+      "domain": "sequences",
+      "difficulty": "hard",
+      "answer_type": "numeric",
+      "answerable": true,
+      "expected_answer": "162",
+      "acceptable_variants": [
+        "162.0"
+      ],
+      "grading_rubric": "Use a1*r^(n-1).",
+      "required_reasoning": [
+        "substitute n=5",
+        "evaluate power"
+      ],
+      "source_document_ids": [
+        "functions-sequences"
+      ],
+      "source_pages": [
+        {
+          "document_id": "functions-sequences",
+          "page_number": 2
+        }
+      ],
+      "required_chunk_ids": [
+        "functions-sequences:b1d8334d:2:0"
+      ],
+      "expected_citations": [
+        {
+          "document_id": "functions-sequences",
+          "page_number": 2
+        }
+      ],
+      "tags": [
+        "geometric-sequence"
+      ],
+      "dataset_version": "demo-v2",
+      "auto_gradable": true
+    },
+    {
+      "question_id": "diff-power-009",
+      "question": "Differentiate x^5.",
+      "domain": "differentiation",
+      "difficulty": "easy",
+      "answer_type": "formula",
+      "answerable": true,
+      "expected_answer": "5x^4",
+      "acceptable_variants": [
+        "5*x^4",
+        "5 x^4"
+      ],
+      "grading_rubric": "Apply the power rule.",
+      "required_reasoning": [
+        "multiply by exponent",
+        "decrease exponent"
+      ],
+      "source_document_ids": [
+        "calculus-foundations"
+      ],
+      "source_pages": [
+        {
+          "document_id": "calculus-foundations",
+          "page_number": 1
+        }
+      ],
+      "required_chunk_ids": [
+        "calculus-foundations:31543536:1:0"
+      ],
+      "expected_citations": [
+        {
+          "document_id": "calculus-foundations",
+          "page_number": 1
+        }
+      ],
+      "tags": [
+        "power-rule"
+      ],
+      "dataset_version": "demo-v2",
+      "auto_gradable": true
+    },
+    {
+      "question_id": "diff-chain-010",
+      "question": "Differentiate (3x+1)^2.",
+      "domain": "differentiation",
+      "difficulty": "hard",
+      "answer_type": "formula",
+      "answerable": true,
+      "expected_answer": "6(3x+1)",
+      "acceptable_variants": [
+        "18x+6",
+        "6*(3x+1)"
+      ],
+      "grading_rubric": "Apply the chain rule.",
+      "required_reasoning": [
+        "differentiate outer square",
+        "multiply by inner derivative"
+      ],
+      "source_document_ids": [
+        "calculus-foundations"
+      ],
+      "source_pages": [
+        {
+          "document_id": "calculus-foundations",
+          "page_number": 1
+        }
+      ],
+      "required_chunk_ids": [
+        "calculus-foundations:31543536:1:0"
+      ],
+      "expected_citations": [
+        {
+          "document_id": "calculus-foundations",
+          "page_number": 1
+        }
+      ],
+      "tags": [
+        "chain-rule"
+      ],
+      "dataset_version": "demo-v2",
+      "auto_gradable": true
+    },
+    {
+      "question_id": "int-power-011",
+      "question": "Give an antiderivative of x^3.",
+      "domain": "integration",
+      "difficulty": "easy",
+      "answer_type": "formula",
+      "answerable": true,
+      "expected_answer": "x^4/4 + C",
+      "acceptable_variants": [
+        "(1/4)x^4+C",
+        "x^4 / 4 + C"
+      ],
+      "grading_rubric": "Apply the power antiderivative rule.",
+      "required_reasoning": [
+        "increase exponent",
+        "divide by new exponent"
+      ],
+      "source_document_ids": [
+        "calculus-foundations"
+      ],
+      "source_pages": [
+        {
+          "document_id": "calculus-foundations",
+          "page_number": 2
+        }
+      ],
+      "required_chunk_ids": [
+        "calculus-foundations:31543536:2:0"
+      ],
+      "expected_citations": [
+        {
+          "document_id": "calculus-foundations",
+          "page_number": 2
+        }
+      ],
+      "tags": [
+        "power-integral"
+      ],
+      "dataset_version": "demo-v2",
+      "auto_gradable": true
+    },
+    {
+      "question_id": "int-ftc-012",
+      "question": "If F'=f, express the integral of f from a to b.",
+      "domain": "integration",
+      "difficulty": "medium",
+      "answer_type": "formula",
+      "answerable": true,
+      "expected_answer": "F(b)-F(a)",
+      "acceptable_variants": [
+        "F(b) - F(a)"
+      ],
+      "grading_rubric": "State the endpoint difference.",
+      "required_reasoning": [
+        "apply fundamental theorem"
+      ],
+      "source_document_ids": [
+        "calculus-foundations"
+      ],
+      "source_pages": [
+        {
+          "document_id": "calculus-foundations",
+          "page_number": 2
+        }
+      ],
+      "required_chunk_ids": [
+        "calculus-foundations:31543536:2:0"
+      ],
+      "expected_citations": [
+        {
+          "document_id": "calculus-foundations",
+          "page_number": 2
+        }
+      ],
+      "tags": [
+        "fundamental-theorem"
+      ],
+      "dataset_version": "demo-v2",
+      "auto_gradable": true
+    },
+    {
+      "question_id": "lin-basis-013",
+      "question": "What two properties define a basis?",
+      "domain": "linear_algebra",
+      "difficulty": "easy",
+      "answer_type": "short_text",
+      "answerable": true,
+      "expected_answer": "linearly independent and spanning",
+      "acceptable_variants": [
+        "linearly independent spanning set"
+      ],
+      "grading_rubric": "Mention both independence and spanning.",
+      "required_reasoning": [
+        "identify two defining properties"
+      ],
+      "source_document_ids": [
+        "linear-foundations"
+      ],
+      "source_pages": [
+        {
+          "document_id": "linear-foundations",
+          "page_number": 1
+        }
+      ],
+      "required_chunk_ids": [
+        "linear-foundations:ec585a2e:1:0"
+      ],
+      "expected_citations": [
+        {
+          "document_id": "linear-foundations",
+          "page_number": 1
+        }
+      ],
+      "tags": [
+        "basis"
+      ],
+      "dataset_version": "demo-v2",
+      "auto_gradable": false
+    },
+    {
+      "question_id": "lin-coordinates-014",
+      "question": "Write (3,-2) using the standard basis e1=(1,0), e2=(0,1).",
+      "domain": "linear_algebra",
+      "difficulty": "medium",
+      "answer_type": "formula",
+      "answerable": true,
+      "expected_answer": "3e1-2e2",
+      "acceptable_variants": [
+        "3 e1 - 2 e2",
+        "3(1,0)-2(0,1)"
+      ],
+      "grading_rubric": "Give both coordinates in the standard basis.",
+      "required_reasoning": [
+        "read vector coordinates"
+      ],
+      "source_document_ids": [
+        "linear-foundations"
+      ],
+      "source_pages": [
+        {
+          "document_id": "linear-foundations",
+          "page_number": 1
+        }
+      ],
+      "required_chunk_ids": [
+        "linear-foundations:ec585a2e:1:0"
+      ],
+      "expected_citations": [
+        {
+          "document_id": "linear-foundations",
+          "page_number": 1
+        }
+      ],
+      "tags": [
+        "coordinates"
+      ],
+      "dataset_version": "demo-v2",
+      "auto_gradable": true
+    },
+    {
+      "question_id": "lin-linearity-015",
+      "question": "State the two additivity and scalar properties required of a linear map T.",
+      "domain": "linear_algebra",
+      "difficulty": "medium",
+      "answer_type": "short_text",
+      "answerable": true,
+      "expected_answer": "T(u+v)=T(u)+T(v) and T(av)=aT(v)",
+      "acceptable_variants": [
+        "additivity and homogeneity"
+      ],
+      "grading_rubric": "State both properties.",
+      "required_reasoning": [
+        "recall linearity conditions"
+      ],
+      "source_document_ids": [
+        "linear-foundations"
+      ],
+      "source_pages": [
+        {
+          "document_id": "linear-foundations",
+          "page_number": 2
+        }
+      ],
+      "required_chunk_ids": [
+        "linear-foundations:ec585a2e:2:0"
+      ],
+      "expected_citations": [
+        {
+          "document_id": "linear-foundations",
+          "page_number": 2
+        }
+      ],
+      "tags": [
+        "linear-map"
+      ],
+      "dataset_version": "demo-v2",
+      "auto_gradable": false
+    },
+    {
+      "question_id": "lin-rank-016",
+      "question": "If dim(V)=7 and nullity(T)=2, find rank(T).",
+      "domain": "linear_algebra",
+      "difficulty": "hard",
+      "answer_type": "numeric",
+      "answerable": true,
+      "expected_answer": "5",
+      "acceptable_variants": [
+        "rank(T)=5"
+      ],
+      "grading_rubric": "Use rank-nullity.",
+      "required_reasoning": [
+        "substitute dimensions",
+        "subtract nullity"
+      ],
+      "source_document_ids": [
+        "linear-foundations"
+      ],
+      "source_pages": [
+        {
+          "document_id": "linear-foundations",
+          "page_number": 2
+        }
+      ],
+      "required_chunk_ids": [
+        "linear-foundations:ec585a2e:2:0"
+      ],
+      "expected_citations": [
+        {
+          "document_id": "linear-foundations",
+          "page_number": 2
+        }
+      ],
+      "tags": [
+        "rank-nullity"
+      ],
+      "dataset_version": "demo-v2",
+      "auto_gradable": true
+    },
+    {
+      "question_id": "prob-conditional-017",
+      "question": "If P(A intersect B)=0.2 and P(B)=0.5, compute P(A given B).",
+      "domain": "probability",
+      "difficulty": "medium",
+      "answer_type": "numeric",
+      "answerable": true,
+      "expected_answer": "0.4",
+      "acceptable_variants": [
+        "2/5",
+        "40%"
+      ],
+      "grading_rubric": "Divide the intersection probability by P(B).",
+      "required_reasoning": [
+        "apply conditional formula"
+      ],
+      "source_document_ids": [
+        "probability-statistics"
+      ],
+      "source_pages": [
+        {
+          "document_id": "probability-statistics",
+          "page_number": 1
+        }
+      ],
+      "required_chunk_ids": [
+        "probability-statistics:3ce9b434:1:0"
+      ],
+      "expected_citations": [
+        {
+          "document_id": "probability-statistics",
+          "page_number": 1
+        }
+      ],
+      "tags": [
+        "conditional-probability"
+      ],
+      "dataset_version": "demo-v2",
+      "auto_gradable": true
+    },
+    {
+      "question_id": "prob-independent-018",
+      "question": "P(A)=0.5, P(B)=0.4, and P(A intersect B)=0.2. Are A and B independent?",
+      "domain": "probability",
+      "difficulty": "hard",
+      "answer_type": "short_text",
+      "answerable": true,
+      "expected_answer": "yes",
+      "acceptable_variants": [
+        "Yes, because 0.5*0.4=0.2"
+      ],
+      "grading_rubric": "Compare the intersection with the product.",
+      "required_reasoning": [
+        "multiply marginals",
+        "compare"
+      ],
+      "source_document_ids": [
+        "probability-statistics"
+      ],
+      "source_pages": [
+        {
+          "document_id": "probability-statistics",
+          "page_number": 1
+        }
+      ],
+      "required_chunk_ids": [
+        "probability-statistics:3ce9b434:1:0"
+      ],
+      "expected_citations": [
+        {
+          "document_id": "probability-statistics",
+          "page_number": 1
+        }
+      ],
+      "tags": [
+        "independence"
+      ],
+      "dataset_version": "demo-v2",
+      "auto_gradable": false
+    },
+    {
+      "question_id": "stat-mean-019",
+      "question": "Find the mean of 2, 4, 6, 8.",
+      "domain": "statistics",
+      "difficulty": "easy",
+      "answer_type": "numeric",
+      "answerable": true,
+      "expected_answer": "5",
+      "acceptable_variants": [
+        "5.0"
+      ],
+      "grading_rubric": "Sum and divide by four.",
+      "required_reasoning": [
+        "sum observations",
+        "divide by count"
+      ],
+      "source_document_ids": [
+        "probability-statistics"
+      ],
+      "source_pages": [
+        {
+          "document_id": "probability-statistics",
+          "page_number": 2
+        }
+      ],
+      "required_chunk_ids": [
+        "probability-statistics:3ce9b434:2:0"
+      ],
+      "expected_citations": [
+        {
+          "document_id": "probability-statistics",
+          "page_number": 2
+        }
+      ],
+      "tags": [
+        "mean"
+      ],
+      "dataset_version": "demo-v2",
+      "auto_gradable": true
+    },
+    {
+      "question_id": "stat-variance-020",
+      "question": "For the population 1, 3, find the population variance.",
+      "domain": "statistics",
+      "difficulty": "hard",
+      "answer_type": "numeric",
+      "answerable": true,
+      "expected_answer": "1",
+      "acceptable_variants": [
+        "1.0"
+      ],
+      "grading_rubric": "The mean is 2 and the average squared deviation is 1.",
+      "required_reasoning": [
+        "compute mean",
+        "compute squared deviations",
+        "average"
+      ],
+      "source_document_ids": [
+        "probability-statistics"
+      ],
+      "source_pages": [
+        {
+          "document_id": "probability-statistics",
+          "page_number": 2
+        }
+      ],
+      "required_chunk_ids": [
+        "probability-statistics:3ce9b434:2:0"
+      ],
+      "expected_citations": [
+        {
+          "document_id": "probability-statistics",
+          "page_number": 2
+        }
+      ],
+      "tags": [
+        "variance"
+      ],
+      "dataset_version": "demo-v2",
+      "auto_gradable": true
+    },
+    {
+      "question_id": "geo-pythagorean-021",
+      "question": "A right triangle has legs 6 and 8. Find the hypotenuse.",
+      "domain": "geometry",
+      "difficulty": "easy",
+      "answer_type": "numeric",
+      "answerable": true,
+      "expected_answer": "10",
+      "acceptable_variants": [
+        "10.0"
+      ],
+      "grading_rubric": "Use the Pythagorean theorem.",
+      "required_reasoning": [
+        "square legs",
+        "add",
+        "take square root"
+      ],
+      "source_document_ids": [
+        "geometry-word-problems"
+      ],
+      "source_pages": [
+        {
+          "document_id": "geometry-word-problems",
+          "page_number": 1
+        }
+      ],
+      "required_chunk_ids": [
+        "geometry-word-problems:d1d72559:1:0"
+      ],
+      "expected_citations": [
+        {
+          "document_id": "geometry-word-problems",
+          "page_number": 1
+        }
+      ],
+      "tags": [
+        "pythagorean"
+      ],
+      "dataset_version": "demo-v2",
+      "auto_gradable": true
+    },
+    {
+      "question_id": "geo-area-022",
+      "question": "A circle has radius 3. Express its area exactly.",
+      "domain": "geometry",
+      "difficulty": "medium",
+      "answer_type": "formula",
+      "answerable": true,
+      "expected_answer": "9pi",
+      "acceptable_variants": [
+        "9*pi",
+        "9π"
+      ],
+      "grading_rubric": "Use pi*r^2.",
+      "required_reasoning": [
+        "square radius",
+        "multiply by pi"
+      ],
+      "source_document_ids": [
+        "geometry-word-problems"
+      ],
+      "source_pages": [
+        {
+          "document_id": "geometry-word-problems",
+          "page_number": 1
+        }
+      ],
+      "required_chunk_ids": [
+        "geometry-word-problems:d1d72559:1:0"
+      ],
+      "expected_citations": [
+        {
+          "document_id": "geometry-word-problems",
+          "page_number": 1
+        }
+      ],
+      "tags": [
+        "circle-area"
+      ],
+      "dataset_version": "demo-v2",
+      "auto_gradable": true
+    },
+    {
+      "question_id": "word-rate-023",
+      "question": "A cyclist travels at 15 km/h for 2 hours, then 10 km/h for 1 hour. Find total distance.",
+      "domain": "word_problems",
+      "difficulty": "medium",
+      "answer_type": "multi_step",
+      "answerable": true,
+      "expected_answer": "40 km",
+      "acceptable_variants": [
+        "40",
+        "40km"
+      ],
+      "grading_rubric": "Add 15*2 and 10*1.",
+      "required_reasoning": [
+        "compute each distance",
+        "add distances"
+      ],
+      "source_document_ids": [
+        "geometry-word-problems"
+      ],
+      "source_pages": [
+        {
+          "document_id": "geometry-word-problems",
+          "page_number": 2
+        }
+      ],
+      "required_chunk_ids": [
+        "geometry-word-problems:d1d72559:2:0"
+      ],
+      "expected_citations": [
+        {
+          "document_id": "geometry-word-problems",
+          "page_number": 2
+        }
+      ],
+      "tags": [
+        "distance-rate-time"
+      ],
+      "dataset_version": "demo-v2",
+      "auto_gradable": false
+    },
+    {
+      "question_id": "word-percent-024",
+      "question": "A price of 100 increases by 10 percent and then decreases by 10 percent. Find the final price.",
+      "domain": "word_problems",
+      "difficulty": "hard",
+      "answer_type": "multi_step",
+      "answerable": true,
+      "expected_answer": "99",
+      "acceptable_variants": [
+        "99.0"
+      ],
+      "grading_rubric": "Multiply by 1.10 and then 0.90.",
+      "required_reasoning": [
+        "apply first factor",
+        "apply second factor"
+      ],
+      "source_document_ids": [
+        "geometry-word-problems"
+      ],
+      "source_pages": [
+        {
+          "document_id": "geometry-word-problems",
+          "page_number": 2
+        }
+      ],
+      "required_chunk_ids": [
+        "geometry-word-problems:d1d72559:2:0"
+      ],
+      "expected_citations": [
+        {
+          "document_id": "geometry-word-problems",
+          "page_number": 2
+        }
+      ],
+      "tags": [
+        "successive-percent"
+      ],
+      "dataset_version": "demo-v2",
+      "auto_gradable": false
+    },
+    {
+      "question_id": "unanswerable-prime-025",
+      "question": "What is the largest known prime number?",
+      "domain": "number_theory",
+      "difficulty": "hard",
+      "answer_type": "unanswerable",
+      "answerable": false,
+      "expected_answer": "資料内では確認できません。",
+      "acceptable_variants": [
+        "not found in the provided material",
+        "cannot be confirmed from the material"
+      ],
+      "grading_rubric": "Do not answer from outside knowledge; explicitly state that the supplied corpus is insufficient.",
+      "required_reasoning": [
+        "search corpus",
+        "recognize missing evidence",
+        "abstain"
+      ],
+      "source_document_ids": [],
+      "source_pages": [],
+      "required_chunk_ids": [],
+      "expected_citations": [],
+      "tags": [
+        "unanswerable",
+        "abstention"
+      ],
+      "dataset_version": "demo-v2",
+      "auto_gradable": true
+    },
+    {
+      "question_id": "unanswerable-topology-026",
+      "question": "State the classification theorem for compact connected surfaces.",
+      "domain": "topology",
+      "difficulty": "hard",
+      "answer_type": "unanswerable",
+      "answerable": false,
+      "expected_answer": "資料内では確認できません。",
+      "acceptable_variants": [
+        "not found in the provided material",
+        "cannot be confirmed from the material"
+      ],
+      "grading_rubric": "Do not answer from outside knowledge; explicitly state that the supplied corpus is insufficient.",
+      "required_reasoning": [
+        "search corpus",
+        "recognize missing evidence",
+        "abstain"
+      ],
+      "source_document_ids": [],
+      "source_pages": [],
+      "required_chunk_ids": [],
+      "expected_citations": [],
+      "tags": [
+        "unanswerable",
+        "abstention"
+      ],
+      "dataset_version": "demo-v2",
+      "auto_gradable": true
+    },
+    {
+      "question_id": "unanswerable-ode-027",
+      "question": "Solve the differential equation y''+y=0 with y(0)=1 and y'(0)=0.",
+      "domain": "differential_equations",
+      "difficulty": "hard",
+      "answer_type": "unanswerable",
+      "answerable": false,
+      "expected_answer": "資料内では確認できません。",
+      "acceptable_variants": [
+        "not found in the provided material",
+        "cannot be confirmed from the material"
+      ],
+      "grading_rubric": "Do not answer from outside knowledge; explicitly state that the supplied corpus is insufficient.",
+      "required_reasoning": [
+        "search corpus",
+        "recognize missing evidence",
+        "abstain"
+      ],
+      "source_document_ids": [],
+      "source_pages": [],
+      "required_chunk_ids": [],
+      "expected_citations": [],
+      "tags": [
+        "unanswerable",
+        "abstention"
+      ],
+      "dataset_version": "demo-v2",
+      "auto_gradable": true
+    }
+  ]
+}

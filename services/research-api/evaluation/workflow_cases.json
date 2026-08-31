@@ -1,0 +1,32 @@
+[
+  {
+    "id": "differentiate_polynomial_ja",
+    "question": "x^4 - 3*x^2 + 7 を微分してください",
+    "expected_tool": "differentiate_polynomial"
+  },
+  {
+    "id": "reject_trigonometric_ja",
+    "question": "sin(x) を微分してください",
+    "expected_tool": "differentiate_polynomial"
+  },
+  {
+    "id": "differentiate_polynomial_en",
+    "question": "Differentiate 2*x^3 + x with respect to x.",
+    "expected_tool": "differentiate_polynomial"
+  },
+  {
+    "id": "canonical_one_form",
+    "question": "余接束の標準的1形式を定義してください",
+    "expected_tool": "search_math_pdf"
+  },
+  {
+    "id": "darboux_theorem",
+    "question": "ダルブーの定理は何を述べていますか？",
+    "expected_tool": "search_math_pdf"
+  },
+  {
+    "id": "riemann_hypothesis",
+    "question": "リーマン予想は証明されていますか？",
+    "expected_tool": "search_math_pdf"
+  }
+]

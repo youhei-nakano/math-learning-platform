@@ -1,0 +1,4 @@
+# Install only when testing roadmap items 13 and 14.
+mcp==2.1.1
+openai-agents==0.22.0
+pymupdf==1.28.2
