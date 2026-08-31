@@ -12,22 +12,11 @@
 
 ## macOSで成果物を確認する
 
-既存機能、PDF解析、検索・引用統合を確認する場合はTerminalを2つ使います。
-
-Terminal 1（固定済みCC0資料を検索するsandbox API）:
+モノレポのルートからセットアップして、Webと検索APIを同時起動できます。
 
 ```zsh
-cd /path/to/openai-sandbox
-source .venv/bin/activate
-python research_api.py
-```
-
-Terminal 2（開発用BFFを含むReactアプリ）:
-
-```zsh
-cd /path/to/my-app
-npm install
-npm run dev
+./scripts/setup.sh
+./scripts/dev.sh
 ```
 
 Terminalに表示された `http://localhost:5173` をブラウザで開きます。
@@ -52,7 +41,7 @@ uvicorn math_research_assistant.app:app --reload --port 8000
 Math Notes、Floerデモ、保存済みマップ、PDF基本解析、文書構造フォールバックは
 動作します。
 
-`/path/to/openai-sandbox` の検索APIとは、ブラウザから直接ではなく
+`services/research-api`の検索APIとは、ブラウザから直接ではなく
 `/api/research/query` の同一オリジンBFF経由で接続します。開発時はVite proxy、
 ビルド後は `npm start` のNodeサーバーがBFFを担当します。質問と処理方式だけを送り、
 ノードメモやPDF全体をsandboxへ暗黙に送信しません。接続境界は

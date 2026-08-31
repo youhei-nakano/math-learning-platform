@@ -4,7 +4,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs'
 
-const fixture = '/path/to/text_linear_algebra.pdf'
+const fixture = process.env.LINEAR_ALGEBRA_PDF || ''
 
 test('実PDFからメタデータ・432ページ・アウトラインと遷移先を取得する', { skip: !existsSync(fixture) }, async () => {
   const data = new Uint8Array(readFileSync(fixture))

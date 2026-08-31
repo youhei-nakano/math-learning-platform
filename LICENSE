@@ -1,0 +1,7 @@
+No license is granted for the application source code unless a file explicitly
+states otherwise.
+
+The original evaluation fixtures under
+services/research-api/evaluation/datasets/ declare their own CC0-1.0 terms and
+may be used under those declarations. Third-party dependencies and bundled font,
+PDF, and dictionary assets retain their respective licenses.

@@ -53,7 +53,7 @@ Aggregate only measured live records:
   --json evaluation/live-results.json \
   --csv evaluation/live-results.csv \
   --markdown evaluation/LIVE_RESULTS.md \
-  --app-json /path/to/my-app/public/live-evaluation-status.json
+  --app-json ../../apps/web/public/live-evaluation-status.json
 ```
 
 The manual GitHub Actions workflow requires an environment named

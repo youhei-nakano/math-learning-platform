@@ -2,13 +2,13 @@
 
 既存の数学サンドボックスを残しつつ、複数PDFの版固定、ローカル検索、
 引用検証、単一／複数エージェント構成の比較、再開可能な評価を追加した
-オフライン優先の研究基盤です。Reactクライアント `my-app` の根拠付き質問機能から
+オフライン優先の研究基盤です。Reactクライアント `apps/web` の根拠付き質問機能から
 同一オリジンBFFを介して接続します。ノードメモはブラウザ内に留まり、APIへ送りません。
 
 ## macOSでの再現
 
 ```zsh
-cd /path/to/openai-sandbox
+cd services/research-api
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
@@ -30,8 +30,8 @@ for config in evaluation/configs/*.json; do
 done
 python evaluation/report_research.py evaluation/runs/*.jsonl \
   --csv evaluation/results.csv --markdown evaluation/RESULTS.md \
-  --app-json /path/to/my-app/public/evaluation-results.json \
-  --readme README_JA.md --readme /path/to/my-app/README.md
+  --app-json ../../apps/web/public/evaluation-results.json \
+  --readme README_JA.md --readme ../../apps/web/README.md
 ```
 
 上記はOpenAI APIを呼びません。従来のAPI実験は、利用者が明示的に許可し、
