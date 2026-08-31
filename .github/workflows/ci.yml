@@ -1,0 +1,76 @@
+name: Monorepo CI
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: services/research-api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            services/research-api/requirements.txt
+            services/research-api/requirements-dev.txt
+      - run: pip install -r requirements.txt -r requirements-dev.txt
+      - run: ruff check .
+      - run: ruff format --check .
+      - run: python evaluation/datasets/demo-v2/generate_fixtures.py
+      - run: python evaluation/validate_dataset.py evaluation/datasets/demo-v2/dataset.json
+      - run: python -m unittest discover -s tests -v
+      - name: Deterministic pipeline smoke
+        run: python -m unittest discover -s tests -p test_live_evaluation.py -v
+      - name: Deterministic retrieval smoke
+        run: >-
+          python evaluation/run_research.py
+          --dataset evaluation/datasets/demo-v2/dataset.json
+          --config evaluation/configs/single-hybrid-rerank.json
+          --output /tmp/deterministic-smoke.jsonl
+          --case-id arith-percent-001 --no-resume
+
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+
+  integration:
+    needs: [python, web]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: pip install -r services/research-api/requirements.txt
+      - run: npm ci --prefix apps/web
+      - run: npm run build --prefix apps/web
+      - run: python3 -m venv services/research-api/.venv
+      - run: services/research-api/.venv/bin/pip install -r services/research-api/requirements.txt
+      - run: ./scripts/integration-smoke.sh
+

@@ -1,0 +1,68 @@
+name: Live LLM evaluation
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        type: choice
+        options: [live-single, live-multi]
+        required: true
+      case_id:
+        description: Optional exact case ID
+        required: false
+      problem_count:
+        description: Maximum cases, 1-27
+        default: "1"
+        required: true
+      model:
+        default: gpt-5.4-mini-2026-03-17
+        required: true
+      trials:
+        description: Trials per case, 1-3
+        default: "1"
+        required: true
+      timeout_seconds:
+        default: "45"
+        required: true
+      max_cost_usd:
+        description: Total API budget, at most USD 5
+        default: "0.20"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  evaluate:
+    environment: live-evaluation
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: services/research-api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Run explicitly authorized evaluation
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          MODE: ${{ inputs.mode }}
+          CASE_ID: ${{ inputs.case_id }}
+          PROBLEM_COUNT: ${{ inputs.problem_count }}
+          MODEL: ${{ inputs.model }}
+          TRIALS: ${{ inputs.trials }}
+          TIMEOUT_SECONDS: ${{ inputs.timeout_seconds }}
+          MAX_COST_USD: ${{ inputs.max_cost_usd }}
+        run: |
+          args=(--live --mode "$MODE" --output evaluation/runs/live.jsonl --limit "$PROBLEM_COUNT" --model "$MODEL" --trials "$TRIALS" --timeout-seconds "$TIMEOUT_SECONDS" --max-total-cost-usd "$MAX_COST_USD")
+          if [[ -n "$CASE_ID" ]]; then args+=(--case-id "$CASE_ID"); fi
+          python evaluation/live_runner.py "${args[@]}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: live-evaluation-jsonl
+          path: services/research-api/evaluation/runs/live.jsonl
+          if-no-files-found: warn
