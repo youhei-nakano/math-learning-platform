@@ -12,6 +12,15 @@ test('関連章節の重複ページを除き50ページで制限する', () => 
   assert.equal(new Set(result.pageNumbers).size, 50)
 })
 
+test('既定運用の12ページ上限でも章節範囲を正規化する', () => {
+  const result = normalizeSelectedSections([
+    { outlineId: 'a', title: 'A', startPage: 1, endPage: 20 },
+  ], 100, 12)
+  assert.deepEqual(result.pageNumbers, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
+  assert.equal(result.sections[0].endPage, 12)
+  assert.equal(result.truncated, true)
+})
+
 test('APIへはページ番号と本文だけを送る', () => {
   assert.deepEqual(toApiPageTexts([{ page: 2, text: 'body', characterCount: 4 }]), [{ page: 2, text: 'body' }])
 })

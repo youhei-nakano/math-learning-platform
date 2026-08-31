@@ -1,13 +1,15 @@
-import { useMemo, useRef, useState } from 'react'
-import LearningGraph from '../components/LearningGraph'
+import { lazy, Suspense, useMemo, useRef, useState } from 'react'
 import LearningMapList from '../components/LearningMapList'
-import LearningNodeDetail from '../components/LearningNodeDetail'
-import MapCandidateReview from '../components/MapCandidateReview'
-import PdfImportWizard from '../components/PdfImportWizard'
-import LearningMapEvaluation from '../components/LearningMapEvaluation'
 import { LEARNING_STATUSES, NODE_TYPES } from '../learningMap/constants'
 import { useLearningMaps } from '../hooks/useLearningMaps'
 import { addLearningNode, deleteLearningNode, deserializeLearningMap, duplicateLearningNode, serializeLearningMap } from '../learningMap/mapNodeOperations'
+
+const LearningGraph = lazy(() => import('../components/LearningGraph'))
+const LearningNodeDetail = lazy(() => import('../components/LearningNodeDetail'))
+const MapCandidateReview = lazy(() => import('../components/MapCandidateReview'))
+const PdfImportWizard = lazy(() => import('../components/PdfImportWizard'))
+const LearningMapEvaluation = lazy(() => import('../components/LearningMapEvaluation'))
+const loading = <div className="analysis-progress" role="status">画面を読み込んでいます…</div>
 
 export default function LearningMapPage() {
   const { maps, activeMap, selectMap, upsertMap, updateActiveMap, updateNode, saveState, retrySave } = useLearningMaps()
@@ -57,9 +59,9 @@ export default function LearningMapPage() {
 
   function openEvaluation(id) { const map = maps.find((item) => item.id === id); if (map) { setEvaluationMap(map); if (map.candidateStatus === 'review') setCandidate(map); setScreen('evaluation') } }
   if (screen === 'list') return <LearningMapList maps={maps} onOpen={openMap} onImport={() => setScreen('import')} onEvaluate={openEvaluation} />
-  if (screen === 'import') return <PdfImportWizard onCancel={() => setScreen('list')} onCandidate={receiveCandidate} />
-  if (screen === 'evaluation' && evaluationMap) return <LearningMapEvaluation map={evaluationMap} onBack={() => setScreen(evaluationMap.candidateStatus === 'review' ? 'review' : 'list')} />
-  if (screen === 'review' && candidate) return <MapCandidateReview map={candidate} onChange={(map) => { setCandidate(map); setEvaluationMap(map); upsertMap(map) }} onBack={() => setScreen('import')} onApprove={approveCandidate} onEvaluate={() => { setEvaluationMap(candidate); setScreen('evaluation') }} />
+  if (screen === 'import') return <Suspense fallback={loading}><PdfImportWizard onCancel={() => setScreen('list')} onCandidate={receiveCandidate} /></Suspense>
+  if (screen === 'evaluation' && evaluationMap) return <Suspense fallback={loading}><LearningMapEvaluation map={evaluationMap} onBack={() => setScreen(evaluationMap.candidateStatus === 'review' ? 'review' : 'list')} /></Suspense>
+  if (screen === 'review' && candidate) return <Suspense fallback={loading}><MapCandidateReview map={candidate} onChange={(map) => { setCandidate(map); setEvaluationMap(map); upsertMap(map) }} onBack={() => setScreen('import')} onApprove={approveCandidate} onEvaluate={() => { setEvaluationMap(candidate); setScreen('evaluation') }} /></Suspense>
   if (!activeMap) return null
 
   return <main className="learning-map-page">
@@ -67,9 +69,9 @@ export default function LearningMapPage() {
     <div className="demo-notice"><strong>{activeMap.sourceType === 'demo' ? 'デモ用の暫定構成' : activeMap.creationMethod === 'document-structure' ? '文書構造マップ' : 'PDF出典付き・利用者確認済み候補'}</strong><span>{activeMap.sourceType === 'demo' ? '内容は操作検証用です。実際の学習では採用する設定と文献に応じて確認してください。' : activeMap.creationMethod === 'document-structure' ? 'このマップはPDFの目次構造から作成した候補です。数学的な前提関係を保証するものではありません。' : `『${activeMap.pdf?.title}』のアウトラインと対象ページに基づく候補です。本文抽出の文字化け箇所は根拠に使用していません。`}</span></div>
     <section className="map-workspace"><div className="map-toolbar"><div className="view-toggle" aria-label="表示範囲"><button className={mode === 'all' ? 'active' : ''} onClick={() => setMode('all')}>全体表示</button><button className={mode === 'minimal' ? 'active' : ''} onClick={() => setMode('minimal')}>必要最小限の経路</button></div><div className="map-actions"><button className="btn btn--ghost" onClick={addNode}>＋ ノード</button><button className="btn btn--ghost" onClick={exportMap}>書き出し</button><button className="btn btn--ghost" onClick={() => importRef.current?.click()}>読み込み</button><input ref={importRef} className="visually-hidden" type="file" accept="application/json,.json" onChange={importMap} /></div><div className="map-legend"><span className="legend-route">━ 推奨経路</span><span>┄ 未確認の関係</span><span>⚠ 未完了の前提あり</span><span>● メモあり</span><span className="scroll-hint">横にスクロール →</span></div></div>
       {operationError && <p className="map-operation-error" role="alert">{operationError}</p>}
-      <LearningGraph goal={activeMap.goal} nodes={activeMap.nodes} edges={activeMap.edges} selectedId={selectedId} mode={mode} onSelect={setSelectedId} />
+      <Suspense fallback={loading}><LearningGraph goal={activeMap.goal} nodes={activeMap.nodes} edges={activeMap.edges} selectedId={selectedId} mode={mode} onSelect={setSelectedId} /></Suspense>
       <div className="legend-row"><div className="legend-group"><b>状態</b>{Object.entries(LEARNING_STATUSES).map(([key, item]) => <span className={`legend-status status-${key}`} key={key}>{item.symbol} {item.label}</span>)}</div><div className="legend-group"><b>種類</b>{Object.values(NODE_TYPES).map((item) => <span key={item.label}>{item.icon} {item.label}</span>)}</div><div className="legend-group"><b>採用区分</b><span>必須</span><span>推奨</span><span>補助</span></div></div>
     </section>
-    {selectedNode && <LearningNodeDetail node={selectedNode} nodes={activeMap.nodes} edges={activeMap.edges} isDemo={activeMap.sourceType === 'demo'} saveState={saveState} onRetrySave={retrySave} onClose={() => setSelectedId(null)} onUpdate={(updates) => updateNode(selectedNode.id, updates)} onDuplicate={() => duplicateNode(selectedNode.id)} onDelete={() => deleteNode(selectedNode.id)} />}
+    {selectedNode && <Suspense fallback={null}><LearningNodeDetail node={selectedNode} nodes={activeMap.nodes} edges={activeMap.edges} isDemo={activeMap.sourceType === 'demo'} saveState={saveState} onRetrySave={retrySave} onClose={() => setSelectedId(null)} onUpdate={(updates) => updateNode(selectedNode.id, updates)} onDuplicate={() => duplicateNode(selectedNode.id)} onDelete={() => deleteNode(selectedNode.id)} /></Suspense>}
   </main>
 }

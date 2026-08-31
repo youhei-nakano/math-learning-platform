@@ -1,6 +1,7 @@
 import { CONCEPT_CHECKS, LEARNING_STATUSES, NODE_TYPES, UNDERSTANDING_LEVELS } from '../learningMap/constants'
 import ProofReviewPanel from './ProofReviewPanel'
 import LatexPreview from './LatexPreview'
+import 'katex/dist/katex.min.css'
 
 const SAVE_LABELS = { saving: '保存中…', saved: '保存しました', error: '保存失敗' }
 

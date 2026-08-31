@@ -5,6 +5,7 @@ import { generateLearningGraph, getAiAvailability, normalizeSelectedSections, re
 
 const flatten = (items) => items.flatMap((item) => [item, ...flatten(item.children ?? [])])
 const formatBytes = (bytes) => bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${Math.ceil(bytes / 1024)} KB`
+const DEFAULT_AI_PAGE_LIMIT = 12
 
 function OutlineTree({ items, selectedId, onSelect }) {
   return <ul className="outline-tree">{items.map((item) => <li key={item.id}><div className={`outline-item level-${item.level}`}><label><input type="radio" name="goal-outline" checked={selectedId === item.id} disabled={!item.pdfPage} onChange={() => onSelect(item.id)} /><span>{item.title}</span></label><em>{item.pdfPage ? `p.${item.pdfPage}` : 'ページ未解決'}</em></div>{item.children?.length > 0 && <details open={item.level < 1}><summary>{item.children.length}項目</summary><OutlineTree items={item.children} selectedId={selectedId} onSelect={onSelect} /></details>}</li>)}</ul>
@@ -17,6 +18,7 @@ export default function PdfImportWizard({ onCancel, onCandidate }) {
   const [mapMode, setMapMode] = useState('document-structure'), [error, setError] = useState(''), [progress, setProgress] = useState('')
   const [aiStatus, setAiStatus] = useState({ loading: true, available: false }), [selection, setSelection] = useState(null), [metadataConsented, setMetadataConsented] = useState(false), [consented, setConsented] = useState(false)
   const controllerRef = useRef(null)
+  const fileRef = useRef(null)
   const timingRef = useRef({})
   const flatOutline = useMemo(() => flatten(inspection?.outline ?? []), [inspection])
   const goalItem = flatOutline.find((item) => item.id === goalId)
@@ -27,9 +29,19 @@ export default function PdfImportWizard({ onCancel, onCandidate }) {
     return () => controller.abort()
   }, [])
 
+  useEffect(() => () => {
+    controllerRef.current?.abort()
+    if (fileRef.current) import('../learningMap/pdfjsAdapter.js').then(({ releasePdfSession }) => releasePdfSession(fileRef.current)).catch(() => {})
+  }, [])
+
   async function selectFile(event) {
     controllerRef.current?.abort()
     const file = event.target.files?.[0]
+    if (fileRef.current && fileRef.current !== file) {
+      const previousFile = fileRef.current
+      import('../learningMap/pdfjsAdapter.js').then(({ releasePdfSession }) => releasePdfSession(previousFile)).catch(() => {})
+    }
+    fileRef.current = file ?? null
     setSelectedFile(file ?? null); setInspection(null); setGoalId(''); setSelection(null); setMetadataConsented(false); setConsented(false); setError('')
     if (!file) return
     timingRef.current = { pdfAnalysisStartedAt: new Date().toISOString() }
@@ -49,8 +61,8 @@ export default function PdfImportWizard({ onCancel, onCandidate }) {
     const controller = new AbortController(); controllerRef.current = controller; setError(''); setSelection(null); setConsented(false); setProgress('関連章節を選定中')
     timingRef.current = { ...timingRef.current, aiCandidateGenerationStartedAt: new Date().toISOString() }
     try {
-      const result = await selectRelevantSections({ title: inspection.metadata.title, author: inspection.metadata.author, pageCount: inspection.metadata.pageCount, outline: flatOutline.map(({ id, title, level: itemLevel, pdfPage, parentId }) => ({ id, title, level: itemLevel, pdfPage, parentId })), goal: goalItem.title, understandingLevel: level, maxSections: 10, maxPages: 50 }, controller.signal)
-      setSelection({ ...normalizeSelectedSections(result.sections, inspection.metadata.pageCount, 50), warnings: result.warnings })
+      const result = await selectRelevantSections({ title: inspection.metadata.title, author: inspection.metadata.author, pageCount: inspection.metadata.pageCount, outline: flatOutline.map(({ id, title, level: itemLevel, pdfPage, parentId }) => ({ id, title, level: itemLevel, pdfPage, parentId })), goal: goalItem.title, understandingLevel: level, maxSections: 10, maxPages: DEFAULT_AI_PAGE_LIMIT }, controller.signal)
+      setSelection({ ...normalizeSelectedSections(result.sections, inspection.metadata.pageCount, DEFAULT_AI_PAGE_LIMIT), warnings: result.warnings })
     } catch (reason) { if (reason.name !== 'AbortError') setError(reason.message) } finally { setProgress(''); controllerRef.current = null }
   }
 
@@ -64,7 +76,7 @@ export default function PdfImportWizard({ onCancel, onCandidate }) {
       setProgress('概念と依存関係の候補を生成中')
       const apiPages = toApiPageTexts(extraction.pages)
       const base = { title: inspection.metadata.title, author: inspection.metadata.author, pageCount: inspection.metadata.pageCount, goal: goalItem.title, understandingLevel: level, sections: selection.sections.map(({ pages: _pages, ...section }) => section), pages: apiPages }
-      const graph = await generateLearningGraph({ ...base, maxNodes, maxPages: 50 }, controller.signal)
+      const graph = await generateLearningGraph({ ...base, maxNodes, maxPages: DEFAULT_AI_PAGE_LIMIT }, controller.signal)
       setProgress('生成結果を批判的にレビュー中')
       const review = await reviewLearningGraph({ pageCount: inspection.metadata.pageCount, goal: goalItem.title, pages: apiPages, graph }, controller.signal)
       setProgress('候補画面を準備中')
@@ -79,10 +91,8 @@ export default function PdfImportWizard({ onCancel, onCandidate }) {
     if (!inspection || !selectedFile || !goalItem) return
     const controller = new AbortController(); controllerRef.current = controller; setError('')
     try {
-      setProgress('到達目標ページを含めて抽出品質を再確認しています…')
-      const refreshed = await inspectPdf(selectedFile, { signal: controller.signal, onProgress: setProgress, goalPage: goalItem.pdfPage })
-      setInspection(refreshed)
-      onCandidate(mapMode === 'known-reviewed-data' ? getReviewedConceptMap(refreshed) : generateDocumentStructureMapCandidate(refreshed, { goalOutlineId: goalId, understandingLevel: level, previousRange, maxNodes }))
+      setProgress('候補画面を準備中')
+      onCandidate(mapMode === 'known-reviewed-data' ? getReviewedConceptMap(inspection) : generateDocumentStructureMapCandidate(inspection, { goalOutlineId: goalId, understandingLevel: level, previousRange, maxNodes }))
     } catch (reason) { if (reason.name !== 'AbortError') setError(reason.message) } finally { setProgress(''); controllerRef.current = null }
   }
 

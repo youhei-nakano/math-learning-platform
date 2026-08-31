@@ -1,11 +1,21 @@
 import { createReadStream, existsSync, statSync } from 'node:fs'
 import { createServer } from 'node:http'
 import { extname, resolve, sep } from 'node:path'
+import { createBrotliCompress, createGzip } from 'node:zlib'
 
 const root = resolve(import.meta.dirname, 'dist')
 const port = Number(process.env.PORT || 4173)
 const sandboxUrl = process.env.RESEARCH_API_URL || 'http://127.0.0.1:8765'
 const types = { '.css': 'text/css; charset=utf-8', '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml' }
+const compressible = new Set(['.css', '.html', '.js', '.json', '.mjs', '.svg'])
+
+function contentEncoding(request, path, size) {
+  if (size < 1024 || !compressible.has(extname(path))) return null
+  const accepted = request.headers['accept-encoding'] ?? ''
+  if (/\bbr\b/.test(accepted)) return 'br'
+  if (/\bgzip\b/.test(accepted)) return 'gzip'
+  return null
+}
 
 function sendJson(response, status, value) {
   const body = JSON.stringify(value)
@@ -33,6 +43,22 @@ createServer(async (request, response) => {
   let path = resolve(root, `.${decodeURIComponent(url.pathname)}`)
   if (!path.startsWith(root + sep) && path !== root) return sendJson(response, 400, { error: { message: 'Invalid path' } })
   if (!existsSync(path) || statSync(path).isDirectory()) path = resolve(root, 'index.html')
-  response.writeHead(200, { 'Content-Type': types[extname(path)] || 'application/octet-stream', 'X-Content-Type-Options': 'nosniff' })
-  if (request.method === 'HEAD') response.end(); else createReadStream(path).pipe(response)
+  const stats = statSync(path)
+  const encoding = contentEncoding(request, path, stats.size)
+  const immutableAsset = /\/assets\/[^/]+-[A-Za-z0-9_-]{8,}\.[^.]+$/.test(path)
+  const headers = {
+    'Content-Type': types[extname(path)] || 'application/octet-stream',
+    'X-Content-Type-Options': 'nosniff',
+    'Cache-Control': immutableAsset ? 'public, max-age=31536000, immutable' : 'no-cache',
+    'Vary': 'Accept-Encoding',
+    'Server-Timing': `static;dur=0;desc="${stats.size} bytes"`,
+  }
+  if (encoding) headers['Content-Encoding'] = encoding
+  else headers['Content-Length'] = stats.size
+  response.writeHead(200, headers)
+  if (request.method === 'HEAD') return response.end()
+  const stream = createReadStream(path)
+  if (encoding === 'br') stream.pipe(createBrotliCompress()).pipe(response)
+  else if (encoding === 'gzip') stream.pipe(createGzip()).pipe(response)
+  else stream.pipe(response)
 }).listen(port, '127.0.0.1', () => console.log(`my-app listening on http://127.0.0.1:${port}`))
