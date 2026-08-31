@@ -10,6 +10,13 @@ def _stats(records):
     successful = [item for item in records if item["status"] == "success"]
     latencies = [item["latency_seconds"] for item in successful]
     costs = [item.get("usage", {}).get("cost_usd") or 0 for item in records]
+    pipeline = [item.get("pipeline_metrics") for item in records]
+    pipeline = [item for item in pipeline if item]
+    classifications = {
+        name: sum(item.get("classification") == name for item in pipeline)
+        for name in ("improved", "unchanged", "regressed", "inconclusive")
+    }
+    revisions = [item for item in pipeline if item.get("revision_requested")]
     return {
         "runs": len(records),
         "successes": len(successful),
@@ -42,6 +49,24 @@ def _stats(records):
         ),
         "cost_usd": sum(costs),
         "cost_per_success_usd": sum(costs) / len(successful) if successful else None,
+        "average_tokens": statistics.mean(
+            item.get("usage", {}).get("total_tokens") or 0 for item in records
+        )
+        if records
+        else None,
+        "average_cost_usd": statistics.mean(costs) if costs else None,
+        "verifier_issue_rate": statistics.mean(
+            bool(item.get("verifier_detected_issue")) for item in pipeline
+        )
+        if pipeline
+        else None,
+        "revision_request_rate": len(revisions) / len(pipeline) if pipeline else None,
+        "revision_application_rate": statistics.mean(
+            bool(item.get("tutor_applied_revision")) for item in revisions
+        )
+        if revisions
+        else None,
+        "change_classifications": classifications if pipeline else None,
     }
 
 
@@ -74,7 +99,12 @@ def aggregate(paths):
         experiments.append(
             {
                 "experiment_id": experiment_id,
-                "mode": first["config"]["mode"],
+                "mode": first.get("orchestration_version")
+                or (
+                    "multi-fixed-v1"
+                    if first["config"]["mode"] == "live-multi"
+                    else "single-v1"
+                ),
                 "model": first["config"]["model"],
                 "dataset_version": first["dataset_version"],
                 "pricing": first.get("pricing"),
