@@ -107,6 +107,8 @@ class FakeResponses:
             },
         }
         output = self.outputs.pop(0) if self.outputs else defaults[role]
+        if isinstance(output, Exception):
+            raise output
         details = SimpleNamespace(cached_tokens=20)
         usage = SimpleNamespace(
             input_tokens=100,
@@ -397,6 +399,8 @@ class LiveRunnerTests(unittest.TestCase):
         )
         self.assertEqual(result["status"], "failed")
         self.assertIn("ValueError", result["error"])
+        self.assertEqual(result["trace"][-1]["status"], "failed")
+        self.assertEqual(result["trace"][-1]["error_code"], "RuntimeError")
         failing = FakeClient(error=TimeoutError("secret internal detail"))
         result = run_live_case(
             self.case,
@@ -408,6 +412,33 @@ class LiveRunnerTests(unittest.TestCase):
         self.assertEqual(result["status"], "failed")
         self.assertEqual(len(failing.responses.calls), 2)
         self.assertNotIn("secret", result["error"])
+
+    def test_multi_stops_explicitly_when_retriever_fails(self):
+        coordinator = {
+            "problem_type": "percentage",
+            "domain": "arithmetic",
+            "difficulty_hypothesis": "easy",
+            "subproblems": [{"id": "s1", "description": "calculate"}],
+            "required_evidence": ["rule"],
+            "required_operations": ["multiply"],
+            "answerability_hypothesis": "answerable",
+            "retrieval_needed": True,
+            "constraints": [],
+        }
+        result = run_live_case(
+            self.case,
+            self.chunks,
+            LiveConfig("live-multi", retries=0),
+            FakeClient([coordinator, TimeoutError("private detail")]),
+            "experiment",
+        )
+        self.assertEqual(result["status"], "failed")
+        self.assertEqual(
+            [item["role"] for item in result["trace"]], ["coordinator", "retriever"]
+        )
+        self.assertEqual(result["trace"][-1]["status"], "failed")
+        self.assertEqual(result["trace"][-1]["error_code"], "RuntimeError")
+        self.assertNotIn("private detail", json.dumps(result))
 
     def test_resume_skips_success_and_retry_failed_repeats_only_failure(self):
         with tempfile.TemporaryDirectory() as directory:
