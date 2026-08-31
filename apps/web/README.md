@@ -23,18 +23,16 @@ Terminalに表示された `http://localhost:5173` をブラウザで開きま�
 「学習マップ」→「PDFから作成」で、ブラウザ内PDF解析、レビュー済み
 線形代数マップ、文書構造マップを利用できます。
 
-AI候補生成も確認する場合は、別のTerminalで
-`math-research-assistant-portfolio` バックエンドを起動します:
+AI候補生成APIもモノレポへ統合されています。APIキーを同じTerminalへ設定して
+ルートの一括起動を使用してください:
 
 ```bash
-cd /path/to/math-research-assistant-portfolio
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -e '.[dev]'
+cd /path/to/math-learning-platform
+./scripts/setup.sh
 read -s "OPENAI_API_KEY?OpenAI API key: "
 export OPENAI_API_KEY
 export OPENAI_MODEL='gpt-5-mini'
-uvicorn math_research_assistant.app:app --reload --port 8000
+./scripts/dev.sh
 ```
 
 ヘルスチェックは `curl http://127.0.0.1:8000/health` です。APIキーがない場合も

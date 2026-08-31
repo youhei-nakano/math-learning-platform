@@ -6,6 +6,13 @@ retrieval, citation validation, and evaluation. The BFF forwards only explicit
 question requests to the loopback research API; it does not forward node notes or
 uploaded PDFs.
 
+`services/learning-map-api` is a separate FastAPI boundary for AI learning-map
+generation. The browser performs PDF parsing and sends only explicitly consented
+metadata or selected page-numbered excerpts directly to the loopback service.
+The PDF binary and node notes never cross this boundary. Separating its virtual
+environment from `research-api` prevents evaluation dependencies from becoming a
+runtime requirement of the Web product.
+
 `multi-pipeline-v2` has one directional data flow:
 
 ```text

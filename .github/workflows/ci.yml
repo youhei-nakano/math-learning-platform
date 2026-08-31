@@ -55,8 +55,26 @@ jobs:
       - run: npm test
       - run: npm run build
 
+  learning-map-api:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: services/learning-map-api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: services/learning-map-api/pyproject.toml
+      - run: pip install -e '.[dev]'
+      - run: ruff check .
+      - run: ruff format --check .
+      - run: pytest
+
   integration:
-    needs: [python, web]
+    needs: [python, learning-map-api, web]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -72,5 +90,6 @@ jobs:
       - run: npm run build --prefix apps/web
       - run: python3 -m venv services/research-api/.venv
       - run: services/research-api/.venv/bin/pip install -r services/research-api/requirements.txt
+      - run: python3 -m venv services/learning-map-api/.venv
+      - run: services/learning-map-api/.venv/bin/pip install -e 'services/learning-map-api'
       - run: ./scripts/integration-smoke.sh
-

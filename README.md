@@ -6,6 +6,7 @@
 ```text
 apps/web/                       React / Vite / Node BFF
 services/research-api/          Python検索API・評価基盤
+services/learning-map-api/      PDF概念依存候補生成API
 docs/                           統合設計とセキュリティ
 scripts/                        ルート操作コマンド
 ```
@@ -17,9 +18,18 @@ scripts/                        ルート操作コマンド
 ./scripts/dev.sh
 ```
 
-画面は`http://127.0.0.1:5173`、検索APIは`http://127.0.0.1:8765`です。
+画面は`http://127.0.0.1:5173`、検索APIは`http://127.0.0.1:8765`、概念マップ
+生成APIは`http://127.0.0.1:8000`です。`OPENAI_API_KEY`を起動したシェルだけに設定
+してから`./scripts/dev.sh`を実行すると、3サービスを一括起動できます。
+既定ポートが使用中の場合は、`RESEARCH_API_PORT`、`LEARNING_MAP_API_PORT`、
+`WEB_DEV_PORT`で開発用ポートを変更できます。
 Webは同一オリジン`/api/research/query`を経由し、ノードメモやPDF全体を検索APIへ
 暗黙送信しません。
+
+概念マップ生成では、まずPDFの書誌情報・目次・学習目標の送信同意を求め、次に
+選定ページ本文の送信同意を別に求めます。PDF全体、未選択ページ、ノードメモは
+送信しません。APIキーがない場合、AI生成だけが無効になり、ローカルPDF解析と
+文書構造マップは利用できます。
 
 ## 検査と評価
 

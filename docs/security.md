@@ -10,6 +10,11 @@
 - Trace stores input hashes and bounded structured outputs, never Authorization
   headers or complete prompts.
 - Normal CI is offline and does not receive or call paid API secrets.
+- Learning-map CI starts its API with `OPENAI_API_KEY` removed and verifies that
+  health reports AI unavailable; model calls are replaced by test doubles.
+- AI citations to unsupplied pages are removed. Nodes left without PDF evidence
+  become excluded external-prerequisite suggestions; a goal without supplied
+  evidence and all out-of-range pages remain hard errors.
 
 This is a research prototype. It does not guarantee mathematical correctness or
 the completeness of citations.
