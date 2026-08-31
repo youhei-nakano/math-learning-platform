@@ -29,9 +29,12 @@ test('特殊文字は文字列のまま保持しHTMLへ変換しない', () => {
   assert.equal(validateCitation(citation).text, '日本語 $x^2$ <script>unsafe()</script>')
 })
 
-test('実LLM未実行をゼロ件の実測として表示しない', async () => {
+test('実LLMの公開状態はraw由来の完了済み対応比較を表示する', async () => {
   const status = JSON.parse(await readFile(new URL('../public/live-evaluation-status.json', import.meta.url), 'utf8'))
-  assert.equal(status.status, 'not_run')
-  assert.match(status.reason, /未実行/)
-  assert.deepEqual(status.experiments, [])
+  assert.equal(status.status, 'measured')
+  assert.equal(status.complete_pairs, 135)
+  assert.equal(status.records, 270)
+  assert.equal(status.conditions['live-single'].runs, 135)
+  assert.equal(status.conditions['live-multi'].runs, 135)
+  assert.ok(status.experiment_cost_usd > 0)
 })

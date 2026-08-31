@@ -367,8 +367,11 @@ def enforce_verifier(verifier, evidence_ids):
     unknown = set(verifier["permitted_citation_ids"]) - set(evidence_ids)
     if unknown:
         raise ValueError(f"verifier permitted unknown citations: {sorted(unknown)}")
-    if verifier["verdict"] == "pass" and verifier["issues"]:
-        raise ValueError("pass verdict cannot contain unresolved issues")
+    unresolved = [
+        issue for issue in verifier["issues"] if issue["severity"] in {"medium", "high"}
+    ]
+    if verifier["verdict"] == "pass" and unresolved:
+        raise ValueError("pass verdict cannot contain medium/high unresolved issues")
     return verifier
 
 

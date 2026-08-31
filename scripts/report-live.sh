@@ -4,8 +4,10 @@ set -euo pipefail
 root=$(cd "$(dirname "$0")/.." && pwd)
 service="$root/services/research-api"
 cd "$service"
-exec "$service/.venv/bin/python" evaluation/report_live.py "$@" \
-  --json evaluation/live-results.json \
-  --csv evaluation/live-results.csv \
-  --markdown evaluation/LIVE_RESULTS.md \
+if [[ $# -ne 1 ]]; then
+  echo "usage: $0 RAW_JSONL" >&2
+  exit 2
+fi
+exec "$service/.venv/bin/python" evaluation/analyze_paired_live.py "$1" \
+  --output-dir evaluation/live-paired \
   --app-json "$root/apps/web/public/live-evaluation-status.json"

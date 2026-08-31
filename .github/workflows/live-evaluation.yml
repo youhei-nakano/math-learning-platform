@@ -3,10 +3,6 @@ name: Live LLM evaluation
 on:
   workflow_dispatch:
     inputs:
-      mode:
-        type: choice
-        options: [live-single, live-multi]
-        required: true
       case_id:
         description: Optional exact case ID
         required: false
@@ -14,19 +10,16 @@ on:
         description: Maximum cases, 1-27
         default: "1"
         required: true
-      model:
-        default: gpt-5.4-mini-2026-03-17
-        required: true
       trials:
-        description: Trials per case, 1-3
-        default: "1"
+        description: Trials per case (production requires 5)
+        default: "5"
         required: true
       timeout_seconds:
         default: "45"
         required: true
       max_cost_usd:
-        description: Total API budget, at most USD 5
-        default: "0.20"
+        description: Total API budget, at most USD 3.60
+        default: "3.60"
         required: true
 
 permissions:
@@ -55,16 +48,14 @@ jobs:
       - name: Run explicitly authorized evaluation
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          MODE: ${{ inputs.mode }}
           CASE_ID: ${{ inputs.case_id }}
           PROBLEM_COUNT: ${{ inputs.problem_count }}
-          MODEL: ${{ inputs.model }}
           TRIALS: ${{ inputs.trials }}
           TIMEOUT_SECONDS: ${{ inputs.timeout_seconds }}
           MAX_COST_USD: ${{ inputs.max_cost_usd }}
         run: |
           set -euo pipefail
-          args=(--live --mode "$MODE" --output evaluation/runs/live.jsonl --limit "$PROBLEM_COUNT" --model "$MODEL" --trials "$TRIALS" --timeout-seconds "$TIMEOUT_SECONDS" --max-total-cost-usd "$MAX_COST_USD")
+          args=(--live --mode paired --output evaluation/runs/live.jsonl --limit "$PROBLEM_COUNT" --trials "$TRIALS" --timeout-seconds "$TIMEOUT_SECONDS" --max-total-cost-usd "$MAX_COST_USD")
           if [[ -n "$CASE_ID" ]]; then args+=(--case-id "$CASE_ID"); fi
           python evaluation/live_runner.py "${args[@]}"
       - name: Build sanitized aggregate

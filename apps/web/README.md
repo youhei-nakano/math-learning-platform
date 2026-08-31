@@ -31,7 +31,7 @@ cd /path/to/math-learning-platform
 ./scripts/setup.sh
 read -s "OPENAI_API_KEY?OpenAI API key: "
 export OPENAI_API_KEY
-export OPENAI_MODEL='gpt-5-mini'
+export OPENAI_MODEL='gpt-5.4-mini-2026-03-17'
 ./scripts/dev.sh
 ```
 

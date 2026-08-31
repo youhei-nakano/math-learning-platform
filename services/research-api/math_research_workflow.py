@@ -7,9 +7,11 @@ from pathlib import Path
 import sympy
 from openai import OpenAI, OpenAIError
 
+from openai_config import GENERATION_MODEL
+
 INDEX_PATH = Path("data/rag_index.json")
-TRANSLATION_MODEL = "gpt-4.1-mini"
-WORKFLOW_MODEL = "gpt-4.1-mini"
+TRANSLATION_MODEL = GENERATION_MODEL
+WORKFLOW_MODEL = GENERATION_MODEL
 MIN_SIMILARITY = 0.52
 MAX_EXPRESSION_LENGTH = 200
 TOP_K = 3

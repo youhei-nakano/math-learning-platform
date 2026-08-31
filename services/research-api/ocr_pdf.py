@@ -8,10 +8,11 @@ from openai import OpenAI
 from pypdf import PdfReader
 
 from math_research_workflow import create_client
+from openai_config import GENERATION_MODEL
 
 PDF_PATH = Path("data/source.pdf")
 OCR_OUTPUT_DIR = Path("data/ocr")
-VISION_MODEL = "gpt-4.1-mini"
+VISION_MODEL = GENERATION_MODEL
 
 
 def find_pages_needing_ocr(pdf_path=PDF_PATH):

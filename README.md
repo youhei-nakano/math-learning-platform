@@ -156,17 +156,21 @@ This uses only checked-in CC0 fixtures and makes no paid model call.
 
 ## Live LLM evaluation
 
-Live evaluation is opt-in and billable. Start with one case, inspect trace and cost, then expand through easy, hard, multi-step, and unanswerable smoke cases before considering all 27 cases:
+Live evaluation is opt-in and billable. Start with one case, inspect trace and cost, then expand through easy, hard, multi-step, and unanswerable smoke cases before considering all 27 cases. Production comparison uses the same hybrid/top-5 retrieval results for both conditions and a seeded problem-by-trial order:
 
 ```bash
 export OPENAI_API_KEY="set-in-this-shell-only"
-./scripts/evaluate-live.sh --live --mode live-multi \
-  --case-id arith-percent-001 --limit 1 \
-  --max-total-cost-usd 0.20 \
-  --output evaluation/runs/pipeline-smoke.jsonl
+./scripts/evaluate-live.sh --live --mode paired --trials 5 \
+  --seed 20260831 --max-total-cost-usd 3.60 \
+  --experiment-name production-paired-v6-gpt54mini \
+  --output evaluation/runs/gpt54mini-paired-v6.jsonl
 ```
 
-The runner refuses to call the API without both the environment key and `--live`. It enforces per-question and total cost, token, step, retry, and timeout limits. Raw runs are ignored by Git.
+The runner refuses to call the API without both a process/keychain credential and `--live`. It enforces per-question and total cost, token, step, retry, and timeout limits. Answers and grading rubrics are used only after all model processing.
+
+<!-- LIVE_RESULTS_START -->
+実LLM評価: `14d125678646d716`、対応比較135組、multi勝/同点/負=17/101/17、全attempt費用 $0.984281。人手監査は未完了。
+<!-- LIVE_RESULTS_END -->
 
 The manual GitHub Actions workflow additionally requires a protected `live-evaluation` Environment and an `OPENAI_API_KEY` environment secret. Do not add that secret unless you intentionally want authorized maintainers to run paid evaluation.
 

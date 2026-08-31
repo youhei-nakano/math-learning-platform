@@ -1,68 +1,80 @@
-# Live LLM evaluation
+# Paired production LLM evaluation
 
-The live runner compares one-call `live-single` with the fixed five-role
-`live-multi` workflow (coordinator, retriever, solver, verifier, tutor). Retrieval
-is deterministic and identical in both conditions. Expected answers, rubrics, and
-required reasoning never enter model prompts.
+The production protocol compares `live-single` (one answer call) with
+`live-multi` (Coordinator, Retriever, Solver, Verifier, Tutor) on all 27
+`demo-v2` cases and five trials. Both conditions receive the exact same
+deterministic hybrid/top-5 retrieval result. The Retriever plan is logged for
+diagnostics but cannot change that evidence set.
 
-## Safety and reproducibility
+## Frozen conditions
 
-- Calls require both `--live` and `OPENAI_API_KEY`.
-- The key stays in the environment and is never written to results.
-- Responses are requested with `store=false` and a strict JSON schema.
-- Supplied PDF excerpts are labelled untrusted and citations are restricted to
-  retrieved chunk IDs.
-- Defaults cap the total run at USD 5 and each question at USD 0.20. Both caps can
-  only be set within those hard limits.
-- Runs are append-only JSONL. Completed `(question_id, trial)` pairs are skipped;
-  `--retry-failed` retries only failed pairs.
-- Each call records role, latency, model response ID, prompt hash, retry count,
-  token usage, and measured API cost. It does not store the complete prompt.
+- model snapshot: `gpt-5.4-mini-2026-03-17`
+- prompt: `live-eval-v2-shared-retrieval`
+- output limit: 600 tokens per model call
+- timeout: 45 seconds; one SDK attempt plus at most one runner retry
+- total measured-cost ceiling: USD 3.60; per-question ceiling: USD 0.20
+- pricing checked 2026-08-31: USD 0.75/M uncached input, USD 0.075/M cached
+  input, USD 4.50/M output
+- schedule seed: `20260831`; condition order is deterministically shuffled for
+  each question/trial pair
 
-The default model is the pinned `gpt-5.4-mini-2026-03-17` snapshot. Pricing
-metadata is checked into each result record with its source and check date. Update
-it deliberately when OpenAI pricing changes; never silently reuse stale pricing.
+Every record contains the dataset/PDF hashes, Git revision and dirty flag,
+prompt/model/configuration, pricing source, timestamps, shared retrieval hash,
+token usage, measured cost, latency, and schedule position. The JSONL is
+append-only. Successful records are skipped on resume; `--retry-failed` retries
+only failures without rewriting prior observations.
 
-## Commands
+The cost ledger admits each API call only when a conservative upper bound based
+on prompt bytes and maximum output tokens fits in the remaining budget. It then
+commits the measured Responses API usage. A failure is never a zero-cost
+success. The normal CI workflow has no live command and makes no paid calls.
 
-Start with exactly one case and inspect the resulting JSONL:
+At live-run startup the runner first uses the process `OPENAI_API_KEY`. If it is
+absent on macOS, it reads generic-password service
+`math-learning-platform-openai` for the current user into the runner process
+only. The captured value is never printed or written to configuration/results.
+
+## Staged execution
+
+Run one paired case first, then hard and unanswerable smokes. `--max-new-records`
+only stages the full paired schedule and is excluded from experiment identity, so
+the production command resumes the exact same experiment. Use the same JSONL so
+all smoke cost counts against the USD 3.60 ledger.
 
 ```zsh
-export OPENAI_API_KEY='set this only in your shell or secret manager'
-.venv/bin/python evaluation/live_runner.py \
-  --live --mode live-single \
-  --case-id arith-percent-001 \
-  --max-total-cost-usd 0.20 \
-  --output evaluation/runs/live-single.jsonl
+./scripts/evaluate-live.sh --live --mode paired --trials 5 \
+  --case-id arith-percent-001 --max-new-records 2 \
+  --experiment-name production-paired-v2-gpt54mini \
+  --max-total-cost-usd 3.60 \
+  --output evaluation/runs/gpt54mini-paired-v2.jsonl
 ```
 
-After reviewing the smoke run, run either full condition. A three-trial run is
-supported with `--trials 3`, subject to the same total budget. `live-multi` can use
-up to five model calls per question, so run it separately and monitor cost.
+After inspecting smoke records, run or resume the production schedule:
 
 ```zsh
-.venv/bin/python evaluation/live_runner.py --live --mode live-multi \
-  --max-total-cost-usd 5.00 --output evaluation/runs/live-multi.jsonl
+./scripts/evaluate-live.sh --live --mode paired --trials 5 \
+  --seed 20260831 --max-total-cost-usd 3.60 \
+  --experiment-name production-paired-v2-gpt54mini \
+  --output evaluation/runs/gpt54mini-paired-v2.jsonl
 ```
 
-Aggregate only measured live records:
+Generate every public artifact from the raw JSONL:
 
 ```zsh
-.venv/bin/python evaluation/report_live.py \
-  evaluation/runs/live-single.jsonl evaluation/runs/live-multi.jsonl \
-  --json evaluation/live-results.json \
-  --csv evaluation/live-results.csv \
-  --markdown evaluation/LIVE_RESULTS.md \
+.venv/bin/python evaluation/analyze_paired_live.py \
+  evaluation/runs/gpt54mini-paired-v2.jsonl \
+  --output-dir evaluation/live-paired-v2 \
   --app-json ../../apps/web/public/live-evaluation-status.json
 ```
 
-The manual GitHub Actions workflow requires an environment named
-`live-evaluation`, an environment secret named `OPENAI_API_KEY`, and reviewer
-approval configured in repository settings. Normal CI never makes API calls.
+Outputs include paired JSON/CSV, all multi losses in CSV and Markdown, and a
+blind review sheet plus a separate reveal key. Blank human-review columns mean
+unreviewed; deterministic grading must not be described as human-verified.
 
-## Interpretation
+## Interpretation limits
 
-Deterministic fixture runs and live-LLM runs are different experiment families
-and must not be pooled. Exact-answer grading is conservative and cannot establish
-mathematical correctness of explanations. Failures remain failures, not zero-cost
-successes. Missing live records are reported as **Not run**, never as zero.
+The 27 questions are locally authored fixtures. Five repetitions measure
+within-protocol variability but do not establish population validity or
+statistical sufficiency. Exact/normalized automated grading may be wrong for a
+semantically unusual answer, and citation page matching does not itself prove
+that a passage supports every claim. These cases are routed to blind review.

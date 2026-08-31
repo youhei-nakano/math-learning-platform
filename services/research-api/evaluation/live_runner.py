@@ -1,7 +1,10 @@
 import argparse
+import getpass
 import json
 import os
 import platform
+import random
+import subprocess
 import sys
 import time
 from dataclasses import asdict, dataclass
@@ -15,6 +18,7 @@ if str(ROOT) not in sys.path:
 
 from evaluation.grading import citation_scores, grade_answer
 from evaluation.run_research import git_version, load_dataset
+from openai_config import GENERATION_MODEL, require_generation_model
 from research_platform.config import ExperimentConfig
 from research_platform.ingestion import ingest_pdf
 from research_platform.orchestration import _retrieve
@@ -24,7 +28,6 @@ from research_platform.pipeline import (
     enforce_solver_citations,
     enforce_tutor,
     enforce_verifier,
-    execute_retrieval,
     hit_difference,
     trace_step,
     utc_now,
@@ -33,7 +36,9 @@ from research_platform.pipeline import (
     validate_trace,
 )
 
-DEFAULT_MODEL = "gpt-5.4-mini-2026-03-17"
+DEFAULT_MODEL = GENERATION_MODEL
+RUNNER_VERSION = "paired-live-v2"
+GRADER_VERSION = "deterministic-v4"
 PRICING = {
     "model_family": "gpt-5.4-mini",
     "input_usd_per_million": 0.75,
@@ -43,6 +48,7 @@ PRICING = {
     "source": "https://developers.openai.com/api/docs/models/gpt-5.4-mini",
 }
 MAX_ESTIMATED_INPUT_TOKENS_PER_CALL = 30_000
+KEYCHAIN_SERVICE = "math-learning-platform-openai"
 
 
 @dataclass(frozen=True)
@@ -53,24 +59,25 @@ class LiveConfig:
     timeout_seconds: float = 45.0
     retries: int = 1
     top_k: int = 5
-    max_total_cost_usd: float = 5.0
+    max_total_cost_usd: float = 3.60
     max_question_cost_usd: float = 0.20
     max_question_tokens: int = 20_000
     max_question_seconds: float = 240.0
     max_steps: int = 6
     trials: int = 1
-    prompt_version: str = "live-eval-v1"
+    prompt_version: str = "live-eval-v3-shared-retrieval"
 
     def validate(self):
         if self.mode not in {"live-single", "live-multi"}:
             raise ValueError("mode must be live-single or live-multi")
+        require_generation_model(self.model)
         if not 1 <= self.max_output_tokens <= 2_000:
             raise ValueError("max_output_tokens must be between 1 and 2000")
-        if not 0 < self.max_total_cost_usd <= 5:
-            raise ValueError("max_total_cost_usd must be in (0, 5]")
+        if not 0 < self.max_total_cost_usd <= 3.60:
+            raise ValueError("max_total_cost_usd must be in (0, 3.60]")
         if not 0 < self.max_question_cost_usd <= 0.20:
             raise ValueError("max_question_cost_usd must be in (0, 0.20]")
-        if not 1 <= self.trials <= 3 or not 0 <= self.retries <= 2:
+        if not 1 <= self.trials <= 5 or not 0 <= self.retries <= 2:
             raise ValueError("trials/retries exceeds the safety limit")
         if not 5 <= self.timeout_seconds <= 120:
             raise ValueError("timeout_seconds must be between 5 and 120")
@@ -168,11 +175,40 @@ def _prompt(role, case, role_input):
         "case": _case_view(case),
         "role_input": role_input,
     }
+    if role == "verifier":
+        payload["rules"].append(
+            "Use verdict=pass only when there are no medium/high issues; low-severity observations may remain in issues."
+        )
     return json.dumps(payload, ensure_ascii=False, sort_keys=True)
 
 
-def _call(client, role, case, role_input, config):
+def implementation_sha256():
+    paths = [
+        Path(__file__),
+        ROOT / "evaluation/analyze_paired_live.py",
+        ROOT / "evaluation/grading.py",
+        ROOT / "openai_config.py",
+        ROOT / "research_platform/pipeline.py",
+        ROOT.parents[1] / "config/openai-generation.json",
+    ]
+    digest = sha256()
+    for path in paths:
+        digest.update(str(path.relative_to(ROOT.parents[1])).encode())
+        digest.update(path.read_bytes())
+    return digest.hexdigest()
+
+
+def _call(client, role, case, role_input, config, budget=None):
     prompt = _prompt(role, case, role_input)
+    # Conservative preflight: UTF-8 bytes are an upper bound on text tokens.
+    worst_cost = calculate_cost(
+        {
+            "input_tokens": len(prompt.encode("utf-8")),
+            "output_tokens": config.max_output_tokens,
+        }
+    )
+    if budget is not None:
+        budget.preflight(worst_cost)
     started = time.perf_counter()
     last_error = None
     for attempt in range(config.retries + 1):
@@ -194,6 +230,10 @@ def _call(client, role, case, role_input, config):
             )
             parsed = _safe_json(response.output_text, role)
             usage = _usage(response)
+            if budget is not None:
+                budget.commit(usage["cost_usd"])
+            actual_model = getattr(response, "model", None) or config.model
+            require_generation_model(actual_model)
             return parsed, {
                 "role": role,
                 "status": "success",
@@ -202,6 +242,7 @@ def _call(client, role, case, role_input, config):
                 "attempts": attempt + 1,
                 "response_id": getattr(response, "id", None),
                 "prompt_sha256": sha256(prompt.encode()).hexdigest(),
+                "actual_model": actual_model,
             }
         except Exception as error:
             last_error = error
@@ -236,9 +277,9 @@ def _usage_total(trace):
     }
 
 
-def _model_step(client, role, case, role_input, config, experiment_id):
+def _model_step(client, role, case, role_input, config, experiment_id, budget=None):
     started_at = utc_now()
-    output, call = _call(client, role, case, role_input, config)
+    output, call = _call(client, role, case, role_input, config, budget)
     return output, trace_step(
         experiment_id,
         case["id"],
@@ -247,7 +288,7 @@ def _model_step(client, role, case, role_input, config, experiment_id):
         call["latency_seconds"] * 1000,
         role_input,
         output,
-        config.model,
+        call["actual_model"],
         call["usage"],
         mode="single-v1" if role == "single" else "multi-pipeline-v2",
     )
@@ -265,7 +306,7 @@ def _guard_question(trace, config, started):
         raise RuntimeError("question step limit exceeded")
 
 
-def run_live_case(case, chunks, config, client, experiment_id, trial=1):
+def run_live_case(case, chunks, config, client, experiment_id, trial=1, budget=None):
     started = time.perf_counter()
     offline = ExperimentConfig(mode="single", top_k=config.top_k)
     hits = _retrieve(case, chunks, offline)
@@ -277,7 +318,9 @@ def run_live_case(case, chunks, config, client, experiment_id, trial=1):
     def call_role(role, role_input):
         nonlocal active_role, active_input
         active_role, active_input = role, role_input
-        return _model_step(client, role, case, role_input, config, experiment_id)
+        return _model_step(
+            client, role, case, role_input, config, experiment_id, budget
+        )
 
     try:
         if config.mode == "live-single":
@@ -295,8 +338,8 @@ def run_live_case(case, chunks, config, client, experiment_id, trial=1):
             orchestration_version = "single-v1"
         else:
             coordinator, step = call_role("coordinator", {})
-            validate_coordinator(coordinator)
             trace.append(step)
+            validate_coordinator(coordinator)
             _guard_question(trace, config, started)
             retriever, step = call_role(
                 "retriever",
@@ -306,7 +349,22 @@ def run_live_case(case, chunks, config, client, experiment_id, trial=1):
             _guard_question(trace, config, started)
             search_started = utc_now()
             active_role, active_input = "search", retriever
-            search_result = execute_retrieval(retriever, chunks)
+            # The comparison holds retrieval constant. The Retriever's plan is
+            # retained for role diagnostics but cannot change the evidence set.
+            search_result = {
+                "queries": retriever["queries"],
+                "query_runs": [
+                    {
+                        "query_id": query["query_id"],
+                        "normalized_query": " ".join(query["text"].split()),
+                        "hit_ids": [item["chunk_id"] for item in initial_context],
+                    }
+                    for query in retriever["queries"]
+                ],
+                "evidence": initial_context,
+                "duration_ms": 0.0,
+                "shared_retrieval": True,
+            }
             trace.append(
                 trace_step(
                     experiment_id,
@@ -325,8 +383,8 @@ def run_live_case(case, chunks, config, client, experiment_id, trial=1):
                 "solver",
                 {"coordinator": coordinator, "evidence": evidence},
             )
-            enforce_solver_citations(solver, evidence_ids)
             trace.append(step)
+            enforce_solver_citations(solver, evidence_ids)
             _guard_question(trace, config, started)
             verifier, step = call_role(
                 "verifier",
@@ -336,8 +394,8 @@ def run_live_case(case, chunks, config, client, experiment_id, trial=1):
                     "evidence": evidence,
                 },
             )
-            enforce_verifier(verifier, evidence_ids)
             trace.append(step)
+            enforce_verifier(verifier, evidence_ids)
             _guard_question(trace, config, started)
             permitted = set(verifier["permitted_citation_ids"])
             tutor_evidence = [
@@ -351,8 +409,8 @@ def run_live_case(case, chunks, config, client, experiment_id, trial=1):
                     "permitted_evidence": tutor_evidence,
                 },
             )
-            enforce_tutor(tutor, verifier)
             trace.append(step)
+            enforce_tutor(tutor, verifier)
             _guard_question(trace, config, started)
             validate_trace(trace, case["id"])
             answer = tutor["final_answer"]
@@ -440,6 +498,9 @@ def run_live_case(case, chunks, config, client, experiment_id, trial=1):
             "pipeline_metrics": pipeline_metrics,
             "trace": trace,
             "error": None,
+            "retrieval_sha256": sha256(
+                json.dumps(initial_context, sort_keys=True).encode()
+            ).hexdigest(),
         }
     except Exception as error:
         if active_role and (not trace or trace[-1]["role"] != active_role):
@@ -485,7 +546,70 @@ def run_live_case(case, chunks, config, client, experiment_id, trial=1):
             "pipeline_metrics": None,
             "trace": trace,
             "error": str(error),
+            "retrieval_sha256": sha256(
+                json.dumps(initial_context, sort_keys=True).encode()
+            ).hexdigest(),
         }
+
+
+class CostBudget:
+    """Measured-cost ledger with conservative per-call admission control."""
+
+    def __init__(self, limit, spent=0.0):
+        self.limit = limit
+        self.spent = spent
+
+    def preflight(self, worst_cost):
+        if self.spent + worst_cost > self.limit + 1e-12:
+            raise RuntimeError("experiment cost limit preflight stop")
+
+    def commit(self, measured_cost):
+        self.spent += measured_cost
+        if self.spent > self.limit + 1e-12:
+            raise RuntimeError("experiment cost limit exceeded")
+
+
+def accounted_cost(records):
+    """Include charged usage that older failure records omitted from their trace."""
+    raw_running = 0.0
+    omitted = 0.0
+    for record in records:
+        raw_running += record.get("usage", {}).get("cost_usd") or 0
+        cumulative = record.get("experiment_cumulative_cost_usd")
+        if cumulative is not None:
+            reserve = record.get("untracked_cost_reserve_usd") or 0
+            omitted += max(0.0, cumulative - reserve - raw_running)
+    return raw_running + omitted
+
+
+def ensure_api_key(environ=None, run_command=subprocess.run, user=None):
+    """Load the API key without printing it or persisting it outside this process."""
+    target = os.environ if environ is None else environ
+    if target.get("OPENAI_API_KEY"):
+        return "environment"
+    account = user or getpass.getuser()
+    try:
+        completed = run_command(
+            [
+                "/usr/bin/security",
+                "find-generic-password",
+                "-a",
+                account,
+                "-s",
+                KEYCHAIN_SERVICE,
+                "-w",
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        return None
+    key = completed.stdout.strip() if completed.returncode == 0 else ""
+    if not key:
+        return None
+    target["OPENAI_API_KEY"] = key
+    return "keychain"
 
 
 def run(
@@ -500,9 +624,6 @@ def run(
     config.validate()
     if limit is not None and not 1 <= limit <= 27:
         raise ValueError("limit must be between 1 and 27")
-    estimated_case_cost = estimated_question_cost(config)
-    if estimated_case_cost > config.max_question_cost_usd:
-        raise ValueError("configured call bound exceeds the per-question cost limit")
     dataset = load_dataset(dataset_path)
     chunks = []
     for document in dataset["documents"]:
@@ -531,6 +652,7 @@ def run(
         if not retry_failed or item["status"] == "success"
     }
     total_cost = sum((item.get("usage", {}).get("cost_usd") or 0) for item in prior)
+    budget = CostBudget(config.max_total_cost_usd, total_cost)
     with destination.open("a", encoding="utf-8") as stream:
         for trial in range(1, config.trials + 1):
             selected_count = 0
@@ -542,12 +664,8 @@ def run(
                 selected_count += 1
                 if (case["id"], trial) in complete:
                     continue
-                if total_cost + estimated_case_cost > config.max_total_cost_usd:
-                    raise RuntimeError(
-                        "estimated next-question cost would exceed total cost limit"
-                    )
                 result = run_live_case(
-                    case, chunks, config, client, experiment_id, trial
+                    case, chunks, config, client, experiment_id, trial, budget
                 )
                 result.update(
                     {
@@ -575,12 +693,140 @@ def run(
     return experiment_id
 
 
+def run_paired(
+    dataset_path,
+    output_path,
+    base_config,
+    client,
+    case_ids=None,
+    retry_failed=False,
+    limit=None,
+    seed=20260831,
+    max_new_records=None,
+    experiment_name="production-paired-v2-gpt54mini",
+    untracked_cost_reserve=0.0,
+):
+    """Run paired single/multi observations in deterministic randomized order."""
+    if base_config.trials != 5:
+        raise ValueError("the production paired protocol requires exactly 5 trials")
+    dataset = load_dataset(dataset_path)
+    chunks = []
+    document_hashes = {}
+    for document in dataset["documents"]:
+        ingested = ingest_pdf(ROOT / document["path"], document["id"])
+        if ingested["document_version"] != document["sha256"]:
+            raise ValueError(f"document version mismatch: {document['id']}")
+        chunks.extend(ingested["chunks"])
+        document_hashes[document["id"]] = document["sha256"]
+    code = git_version()
+    dirty = code.endswith("-dirty")
+    identity = json.dumps(
+        {
+            "protocol": "paired-v1",
+            "config": {**asdict(base_config), "mode": "paired"},
+            "dataset_sha256": sha256(Path(dataset_path).read_bytes()).hexdigest(),
+            "code": code,
+            "implementation_sha256": implementation_sha256(),
+            "seed": seed,
+            "experiment_name": experiment_name,
+        },
+        sort_keys=True,
+    )
+    experiment_id = sha256(identity.encode()).hexdigest()[:16]
+    destination = Path(output_path)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    prior = (
+        [
+            json.loads(line)
+            for line in destination.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        if destination.exists()
+        else []
+    )
+    complete = {
+        (item["case_id"], item.get("trial", 1), item["config"]["mode"])
+        for item in prior
+        if item.get("experiment_id") == experiment_id
+        and (not retry_failed or item["status"] == "success")
+    }
+    if not 0 <= untracked_cost_reserve <= base_config.max_total_cost_usd:
+        raise ValueError("untracked cost reserve is outside the experiment budget")
+    budget = CostBudget(
+        base_config.max_total_cost_usd,
+        accounted_cost(prior) + untracked_cost_reserve,
+    )
+    cases = [c for c in dataset["cases"] if not case_ids or c["id"] in case_ids]
+    if limit is not None:
+        cases = cases[:limit]
+    schedule = []
+    for trial in range(1, 6):
+        for case in cases:
+            modes = ["live-single", "live-multi"]
+            random.Random(f"{seed}:{case['id']}:{trial}").shuffle(modes)
+            schedule.extend(
+                (case, trial, mode, position) for position, mode in enumerate(modes, 1)
+            )
+    with destination.open("a", encoding="utf-8") as stream:
+        written = 0
+        for case, trial, mode, position in schedule:
+            if (case["id"], trial, mode) in complete:
+                continue
+            if max_new_records is not None and written >= max_new_records:
+                break
+            config = LiveConfig(**{**asdict(base_config), "mode": mode})
+            result = run_live_case(
+                case, chunks, config, client, experiment_id, trial, budget
+            )
+            result.update(
+                {
+                    "config": asdict(config),
+                    "dataset_version": dataset["version"],
+                    "dataset_sha256": sha256(
+                        Path(dataset_path).read_bytes()
+                    ).hexdigest(),
+                    "document_sha256": document_hashes,
+                    "code_version": code,
+                    "implementation_sha256": implementation_sha256(),
+                    "git_dirty": dirty,
+                    "executed_at": datetime.now(timezone.utc).isoformat(),
+                    "environment": {
+                        "python": platform.python_version(),
+                        "platform": platform.platform(),
+                    },
+                    "pricing": PRICING,
+                    "expected_answer": case["answer"],
+                    "expected_evidence": case["evidence"],
+                    "domain": case.get("domain", "unknown"),
+                    "difficulty": case.get("difficulty", "unknown"),
+                    "answer_type": case.get("answer_type", "unknown"),
+                    "answerable_expected": case.get("answerable", True),
+                    "evaluation_kind": "live-llm-paired",
+                    "experiment_name": experiment_name,
+                    "runner_version": RUNNER_VERSION,
+                    "grader_version": GRADER_VERSION,
+                    "schedule_seed": seed,
+                    "pair_order": position,
+                    "experiment_cumulative_cost_usd": round(budget.spent, 8),
+                    "untracked_cost_reserve_usd": untracked_cost_reserve,
+                }
+            )
+            stream.write(json.dumps(result, ensure_ascii=False) + "\n")
+            stream.flush()
+            written += 1
+    return experiment_id
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Explicit, budget-limited OpenAI evaluation runner."
     )
     parser.add_argument("--live", action="store_true")
-    parser.add_argument("--mode", choices=["live-single", "live-multi"], required=True)
+    parser.add_argument(
+        "--mode", choices=["live-single", "live-multi", "paired"], required=True
+    )
+    parser.add_argument("--experiment-name", default="production-paired-v2-gpt54mini")
+    parser.add_argument("--untracked-cost-reserve", type=float, default=0.0)
     parser.add_argument(
         "--dataset", default=ROOT / "evaluation/datasets/demo-v2/dataset.json"
     )
@@ -589,26 +835,35 @@ def main():
     parser.add_argument(
         "--max-total-cost-usd",
         type=float,
-        default=float(os.environ.get("MAX_EVAL_COST_USD", "5.0")),
+        default=float(os.environ.get("MAX_EVAL_COST_USD", "3.60")),
     )
     parser.add_argument("--max-question-cost-usd", type=float, default=0.20)
     parser.add_argument("--max-output-tokens", type=int, default=600)
     parser.add_argument("--max-question-tokens", type=int, default=20_000)
     parser.add_argument("--max-question-seconds", type=float, default=240.0)
-    parser.add_argument("--trials", type=int, default=1)
+    parser.add_argument("--trials", type=int, default=5)
     parser.add_argument("--timeout-seconds", type=float, default=45.0)
     parser.add_argument("--limit", type=int)
     parser.add_argument("--case-id", action="append", dest="case_ids")
     parser.add_argument("--retry-failed", action="store_true")
+    parser.add_argument("--seed", type=int, default=20260831)
+    parser.add_argument(
+        "--max-new-records",
+        type=int,
+        help="paired-mode staging limit; excluded from experiment identity",
+    )
     args = parser.parse_args()
     if not args.live:
         parser.error("live API calls require explicit --live")
-    if not os.environ.get("OPENAI_API_KEY"):
-        parser.error("OPENAI_API_KEY is not set; no API call was made")
+    if not ensure_api_key():
+        parser.error(
+            f"OPENAI_API_KEY is unavailable and Keychain service "
+            f"{KEYCHAIN_SERVICE!r} was not found; no API call was made"
+        )
     from openai import OpenAI
 
     config = LiveConfig(
-        mode=args.mode,
+        mode="live-single" if args.mode == "paired" else args.mode,
         model=args.model,
         max_output_tokens=args.max_output_tokens,
         max_question_tokens=args.max_question_tokens,
@@ -619,8 +874,19 @@ def main():
         trials=args.trials,
     )
     client = OpenAI(timeout=config.timeout_seconds, max_retries=0)
+    runner = run_paired if args.mode == "paired" else run
+    extra = (
+        {
+            "seed": args.seed,
+            "max_new_records": args.max_new_records,
+            "experiment_name": args.experiment_name,
+            "untracked_cost_reserve": args.untracked_cost_reserve,
+        }
+        if args.mode == "paired"
+        else {}
+    )
     print(
-        run(
+        runner(
             args.dataset,
             args.output,
             config,
@@ -628,6 +894,7 @@ def main():
             set(args.case_ids or []),
             args.retry_failed,
             args.limit,
+            **extra,
         )
     )
 

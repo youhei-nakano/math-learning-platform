@@ -4,11 +4,13 @@ from pathlib import Path
 
 from openai import OpenAI
 
+from openai_config import GENERATION_MODEL
+
 INDEX_PATH = Path("data/rag_index.json")
 QUESTIONS_PATH = Path("evaluation/questions.json")
 TOP_K = 3
 QUESTION_FIELD = "question_ja"
-TRANSLATION_MODEL = "gpt-4.1-mini"
+TRANSLATION_MODEL = GENERATION_MODEL
 
 
 def cosine_similarity(vector_a, vector_b):

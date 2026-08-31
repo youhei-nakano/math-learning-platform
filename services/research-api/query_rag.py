@@ -4,8 +4,10 @@ from pathlib import Path
 
 from openai import OpenAI
 
+from openai_config import GENERATION_MODEL
+
 INDEX_PATH = Path("data/rag_index.json")
-TRANSLATION_MODEL = "gpt-4.1-mini"
+TRANSLATION_MODEL = GENERATION_MODEL
 MIN_SIMILARITY = 0.52
 
 with INDEX_PATH.open("r", encoding="utf-8") as file:
@@ -137,7 +139,7 @@ prompt = f"""
 """
 
 answer_response = client.responses.create(
-    model="gpt-4.1-mini",
+    model=GENERATION_MODEL,
     input=prompt,
 )
 

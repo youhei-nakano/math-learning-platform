@@ -1,6 +1,7 @@
 import json
 import os
 import re
+from pathlib import Path
 from typing import Protocol, TypeVar
 
 from openai import (
@@ -16,6 +17,12 @@ from pydantic import BaseModel
 from .schemas import GeneratedGraph, ReviewResponse, SelectionResponse
 
 T = TypeVar("T", bound=BaseModel)
+MODEL_CONFIG = json.loads(
+    (Path(__file__).resolve().parents[4] / "config/openai-generation.json").read_text(
+        encoding="utf-8"
+    )
+)
+GENERATION_MODEL = MODEL_CONFIG["model_id"]
 
 
 def safe_connection_reason(error: BaseException) -> str:
@@ -40,7 +47,10 @@ class StructuredClient(Protocol):
 class OpenAIStructuredClient:
     def __init__(self, api_key: str | None = None, model: str | None = None):
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
-        self.model = model or os.getenv("OPENAI_MODEL", "gpt-5-mini")
+        requested_model = model or os.getenv("OPENAI_MODEL") or GENERATION_MODEL
+        if requested_model != GENERATION_MODEL:
+            raise ValueError(f"generation model must be {GENERATION_MODEL}")
+        self.model = GENERATION_MODEL
 
     @property
     def available(self) -> bool:

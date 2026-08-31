@@ -18,6 +18,9 @@ data/
 evaluation/runs/*
 !evaluation/runs/integration-single.jsonl
 !evaluation/runs/integration-multi.jsonl
+!evaluation/runs/production-paired-v1.jsonl
+!evaluation/runs/gpt54mini-paired-v2.jsonl
+!evaluation/runs/gpt54mini-paired-v6.jsonl
 evaluation/private/
 participant-data/
 user-pdfs/

@@ -2,6 +2,8 @@ import json
 
 from openai import OpenAI
 
+from openai_config import GENERATION_MODEL
+
 client = OpenAI()
 
 
@@ -35,7 +37,7 @@ tools = [
 ]
 
 response = client.responses.create(
-    model="gpt-4.1-mini",
+    model=GENERATION_MODEL,
     input="12と30を足してください",
     tools=tools,
 )
@@ -45,7 +47,7 @@ arguments = json.loads(tool_call.arguments)
 result = add_numbers(**arguments)
 
 final_response = client.responses.create(
-    model="gpt-4.1-mini",
+    model=GENERATION_MODEL,
     previous_response_id=response.id,
     input=[
         {

@@ -4,25 +4,32 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
+from evaluation.analyze_paired_live import analyze
 from evaluation.grading import grade_answer, normalize_text
 from evaluation.live_runner import (
+    CostBudget,
     LiveConfig,
     _case_view,
+    accounted_cost,
     calculate_cost,
+    ensure_api_key,
     estimated_question_cost,
     run,
     run_live_case,
+    run_paired,
 )
 from evaluation.regrade_results import regrade
 from evaluation.report_live import aggregate
 from evaluation.run_research import load_dataset
 from evaluation.validate_dataset import validate_dataset
+from openai_config import GENERATION_MODEL
 from research_platform.ingestion import ingest_pdf
 from research_platform.pipeline import (
     assess_revision,
     contains_secret,
     enforce_solver_citations,
     enforce_tutor,
+    enforce_verifier,
     execute_retrieval,
     validate_retrieval_plan,
 )
@@ -162,6 +169,15 @@ class GradingTests(unittest.TestCase):
             ]
         )
         self.assertFalse(grade_answer(case, "42")["correct"])
+        self.assertTrue(grade_answer(case, "This is unanswerable.")["correct"])
+        self.assertTrue(
+            grade_answer(case, "I can’t determine this from the excerpts.")["correct"]
+        )
+        self.assertTrue(
+            grade_answer(case, "The question cannot be answered from the excerpts.")[
+                "correct"
+            ]
+        )
         self.assertTrue(
             grade_answer(case, "Insufficient evidence in the supplied excerpts.")[
                 "correct"
@@ -237,6 +253,12 @@ class LiveRunnerTests(unittest.TestCase):
             ["coordinator", "retriever", "search", "solver", "verifier", "tutor"],
         )
         self.assertFalse(single_client.responses.calls[0]["store"])
+        self.assertTrue(
+            all(
+                call["model"] == GENERATION_MODEL
+                for call in single_client.responses.calls + multi_client.responses.calls
+            )
+        )
 
     def test_role_output_changes_later_inputs_and_actual_search(self):
         client = FakeClient()
@@ -388,6 +410,23 @@ class LiveRunnerTests(unittest.TestCase):
         self.assertEqual(improved["classification"], "improved")
         self.assertEqual(regressed["classification"], "regressed")
 
+    def test_verifier_pass_allows_only_low_severity_observations(self):
+        verifier = {
+            "verdict": "pass",
+            "answer_correctness": "pass",
+            "citation_validity": "pass",
+            "citation_support": "uncertain",
+            "answerability": "answerable",
+            "issues": [{"type": "citation", "severity": "low", "description": "note"}],
+            "permitted_citation_ids": [],
+            "revision_instructions": [],
+            "corrected_answer": None,
+        }
+        self.assertEqual(enforce_verifier(verifier, set()), verifier)
+        verifier["issues"][0]["severity"] = "medium"
+        with self.assertRaisesRegex(ValueError, "medium/high"):
+            enforce_verifier(verifier, set())
+
     def test_non_json_and_api_failure_are_bounded_failures(self):
         bad = FakeClient(outputs=["not-json"])
         result = run_live_case(
@@ -489,12 +528,149 @@ class LiveRunnerTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             LiveConfig("live-single", max_question_cost_usd=0.21).validate()
         self.assertGreater(estimated_question_cost(LiveConfig("live-multi")), 0)
+        with self.assertRaisesRegex(ValueError, "production generation model"):
+            LiveConfig("live-single", model="wrong-model").validate()
+        self.assertEqual(LiveConfig("live-single").model, GENERATION_MODEL)
+
+    def test_strict_budget_stops_before_call_and_tracks_measured_cost(self):
+        budget = CostBudget(0.01, 0.009)
+        with self.assertRaisesRegex(RuntimeError, "preflight"):
+            budget.preflight(0.002)
+        self.assertEqual(budget.spent, 0.009)
+        budget.commit(0.0005)
+        self.assertEqual(budget.spent, 0.0095)
+
+    def test_accounted_cost_preserves_omitted_usage_from_append_only_failure(self):
+        records = [
+            {
+                "usage": {"cost_usd": 0.01},
+                "experiment_cumulative_cost_usd": 0.012,
+            },
+            {
+                "usage": {"cost_usd": 0.003},
+                "experiment_cumulative_cost_usd": 0.113,
+                "untracked_cost_reserve_usd": 0.1,
+            },
+        ]
+        self.assertAlmostEqual(accounted_cost(records), 0.015)
+
+    def test_api_key_prefers_environment_and_keychain_value_is_not_emitted(self):
+        environment = {"OPENAI_API_KEY": "existing-secret"}
+        calls = []
+
+        def unused(command, **kwargs):
+            calls.append((command, kwargs))
+
+        self.assertEqual(ensure_api_key(environment, unused, "tester"), "environment")
+        self.assertEqual(calls, [])
+
+        environment = {}
+
+        def keychain(command, **kwargs):
+            calls.append((command, kwargs))
+            return SimpleNamespace(returncode=0, stdout="keychain-secret\n", stderr="")
+
+        self.assertEqual(ensure_api_key(environment, keychain, "tester"), "keychain")
+        self.assertEqual(environment["OPENAI_API_KEY"], "keychain-secret")
+        self.assertNotIn("keychain-secret", json.dumps(calls))
+        self.assertTrue(calls[-1][1]["capture_output"])
+
+    def test_missing_keychain_does_not_set_a_key_or_expose_stderr(self):
+        environment = {}
+
+        def missing(command, **kwargs):
+            return SimpleNamespace(
+                returncode=44, stdout="", stderr="sensitive system detail"
+            )
+
+        self.assertIsNone(ensure_api_key(environment, missing, "tester"))
+        self.assertNotIn("OPENAI_API_KEY", environment)
+
+    def test_paired_analysis_reports_wins_losses_and_bootstrap(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "paired.jsonl"
+            base = {
+                "experiment_id": "paired",
+                "case_id": "c",
+                "trial": 1,
+                "status": "success",
+                "answerable": True,
+                "answerable_expected": True,
+                "citation_precision": 1.0,
+                "citation_recall": 1.0,
+                "latency_seconds": 1.0,
+                "usage": {"cost_usd": 0.001, "total_tokens": 10},
+                "domain": "algebra",
+                "difficulty": "easy",
+                "trace": [],
+            }
+            single = {
+                **base,
+                "answer_correct": True,
+                "config": {"mode": "live-single", "model": GENERATION_MODEL},
+            }
+            multi = {
+                **base,
+                "answer_correct": False,
+                "config": {"mode": "live-multi", "model": GENERATION_MODEL},
+                "pipeline_metrics": {"classification": "regressed"},
+            }
+            path.write_text(json.dumps(single) + "\n" + json.dumps(multi) + "\n")
+            payload = analyze(path)
+            self.assertEqual(payload["outcomes"]["single_only_correct"], 1)
+            self.assertEqual(payload["outcomes"]["downstream_regression"], 1)
+            self.assertEqual(payload["paired"]["answer_correct"]["mean_difference"], -1)
+
+    def test_paired_analysis_rejects_mixed_models(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "mixed.jsonl"
+            path.write_text(
+                json.dumps(
+                    {
+                        "experiment_id": "e",
+                        "case_id": "c",
+                        "trial": 1,
+                        "status": "success",
+                        "config": {"mode": "live-single", "model": "wrong-model"},
+                        "trace": [],
+                        "usage": {},
+                        "latency_seconds": 0,
+                    }
+                )
+                + "\n"
+            )
+            with self.assertRaisesRegex(ValueError, "unexpected generation model"):
+                analyze(path)
 
     def test_problem_limit_runs_only_requested_count(self):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "limited.jsonl"
             run(DATASET, output, LiveConfig("live-single"), FakeClient(), limit=2)
             self.assertEqual(len(output.read_text().splitlines()), 2)
+
+    def test_paired_staging_limit_resumes_same_experiment(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "paired.jsonl"
+            config = LiveConfig("live-single", trials=5)
+            first_id = run_paired(
+                DATASET,
+                output,
+                config,
+                FakeClient(),
+                {self.case["id"]},
+                max_new_records=2,
+            )
+            self.assertEqual(len(output.read_text().splitlines()), 2)
+            second_id = run_paired(
+                DATASET,
+                output,
+                config,
+                FakeClient(),
+                {self.case["id"]},
+                max_new_records=2,
+            )
+            self.assertEqual(first_id, second_id)
+            self.assertEqual(len(output.read_text().splitlines()), 4)
 
 
 if __name__ == "__main__":

@@ -4,6 +4,8 @@ from pathlib import Path
 from openai import OpenAI
 from pypdf import PdfReader
 
+from openai_config import GENERATION_MODEL
+
 pdf_path = Path("data/source.pdf")
 reader = PdfReader(pdf_path)
 
@@ -96,7 +98,7 @@ prompt = f"""
 """
 
 answer_response = client.responses.create(
-    model="gpt-4.1-mini",
+    model=GENERATION_MODEL,
     input=prompt,
 )
 

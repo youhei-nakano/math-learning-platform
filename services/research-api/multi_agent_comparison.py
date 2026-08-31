@@ -7,9 +7,11 @@ from pathlib import Path
 
 from agents import Agent, Runner
 
+from openai_config import GENERATION_MODEL
+
 CASES_PATH = Path("evaluation/workflow_cases.json")
 OUTPUT_PATH = Path("evaluation/multi_agent_results.json")
-MODEL = "gpt-4.1-mini"
+MODEL = GENERATION_MODEL
 
 
 literature_agent = Agent(

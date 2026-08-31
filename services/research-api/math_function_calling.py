@@ -4,6 +4,8 @@ import re
 import sympy
 from openai import OpenAI
 
+from openai_config import GENERATION_MODEL
+
 MAX_EXPRESSION_LENGTH = 200
 
 
@@ -55,7 +57,7 @@ tools = [
 user_input = input("微分したい式を含む質問を入力してください: ")
 
 response = client.responses.create(
-    model="gpt-4.1-mini",
+    model=GENERATION_MODEL,
     input=user_input,
     tools=tools,
     tool_choice="required",
@@ -84,7 +86,7 @@ except (ValueError, TypeError, sympy.SympifyError) as error:
     raise SystemExit
 
 final_response = client.responses.create(
-    model="gpt-4.1-mini",
+    model=GENERATION_MODEL,
     previous_response_id=response.id,
     input=[
         {
