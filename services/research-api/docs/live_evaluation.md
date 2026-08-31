@@ -9,7 +9,7 @@ diagnostics but cannot change that evidence set.
 ## Frozen conditions
 
 - model snapshot: `gpt-5.4-mini-2026-03-17`
-- prompt: `live-eval-v2-shared-retrieval`
+- prompt: `live-eval-v3-shared-retrieval`
 - output limit: 600 tokens per model call
 - timeout: 45 seconds; one SDK attempt plus at most one runner retry
 - total measured-cost ceiling: USD 3.60; per-question ceiling: USD 0.20
@@ -44,9 +44,9 @@ all smoke cost counts against the USD 3.60 ledger.
 ```zsh
 ./scripts/evaluate-live.sh --live --mode paired --trials 5 \
   --case-id arith-percent-001 --max-new-records 2 \
-  --experiment-name production-paired-v2-gpt54mini \
+  --experiment-name production-paired-v6-gpt54mini \
   --max-total-cost-usd 3.60 \
-  --output evaluation/runs/gpt54mini-paired-v2.jsonl
+  --output evaluation/runs/gpt54mini-paired-v6.jsonl
 ```
 
 After inspecting smoke records, run or resume the production schedule:
@@ -54,16 +54,16 @@ After inspecting smoke records, run or resume the production schedule:
 ```zsh
 ./scripts/evaluate-live.sh --live --mode paired --trials 5 \
   --seed 20260831 --max-total-cost-usd 3.60 \
-  --experiment-name production-paired-v2-gpt54mini \
-  --output evaluation/runs/gpt54mini-paired-v2.jsonl
+  --experiment-name production-paired-v6-gpt54mini \
+  --output evaluation/runs/gpt54mini-paired-v6.jsonl
 ```
 
 Generate every public artifact from the raw JSONL:
 
 ```zsh
 .venv/bin/python evaluation/analyze_paired_live.py \
-  evaluation/runs/gpt54mini-paired-v2.jsonl \
-  --output-dir evaluation/live-paired-v2 \
+  evaluation/runs/gpt54mini-paired-v6.jsonl \
+  --output-dir evaluation/live-paired-v6 \
   --app-json ../../apps/web/public/live-evaluation-status.json
 ```
 

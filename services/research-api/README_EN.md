@@ -7,6 +7,20 @@ citation validation, and resumable evaluation. `my-app` remains the React
 learning-map client. Its grounded-question UI reaches this repository through a
 same-origin BFF; node notes are never included in that request.
 
+## Main empirical result
+
+The production live comparison is complete. Using the frozen
+`gpt-5.4-mini-2026-03-17` snapshot, the experiment compared a single answer
+call with a Coordinator–Retriever–Solver–Verifier–Tutor pipeline on 27 cases
+and five trials (135 paired observations). Both conditions achieved 81.5%
+answer accuracy. The multi-agent pipeline cost 5.8x more and had 8.4x higher
+median latency; its wins/ties/losses were 17/101/17. The single-call condition
+therefore remains the production default for this task and evidence set.
+
+Read the [technical report](../../docs/technical-report.md), the
+[live-results summary](evaluation/LIVE_RESULTS.md), and the
+[frozen protocol](docs/live_evaluation.md). Blind human audit remains pending.
+
 ## Quick start
 
 ```bash

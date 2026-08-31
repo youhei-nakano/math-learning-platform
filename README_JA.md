@@ -50,14 +50,20 @@ Question → Coordinator → Retriever → 実再検索
 
 ## 公開中の実測値
 
-同梱結果は4問の**外部モデルを使わない決定論的抽出smoke**です。
+完全な本番対応比較では、両条件に同じhybrid/top-5検索結果を渡し、
+`gpt-5.4-mini-2026-03-17`を用いて27問を各5回、135組で比較しました。
 
-| 方式 | 問数 | 正解率 | 引用precision | 引用recall | 中央時間 | 外部API費用 |
+| 方式 | 実行数 | 正解率 | 引用precision | 引用recall | 中央時間 | API費用 |
 |---|---:|---:|---:|---:|---:|---:|
-| single | 4 | 100% | 100% | 100% | 0.361 ms | $0.0000 |
-| 固定multi-roleデモ | 4 | 100% | 100% | 100% | 0.370 ms | $0.0000 |
+| single call | 135 | 81.5% | 88.9% | 96.3% | 1.648秒 | $0.142476 |
+| 5段階multi-agent | 135 | 81.5% | 89.6% | 96.3% | 13.909秒 | $0.828224 |
 
-これは小さな合成CC0データに対する部分文字列・根拠ページ評価で、一般的な数学性能やmulti-agentの優位性を示しません。27問セットは同梱されていますが、公開成果物にはその全件live比較はありません。**公開成果物の実LLM評価はNot runです。**
+multi勝／同点／負は17／101／17でした。正解率は同じまま、multiは費用が約5.8倍、
+中央値レイテンシが約8.4倍だったため、この課題と根拠集合ではsingleを既定とします。
+人手盲検監査は未完了であり、自作fixtureと自動採点の結果を一般的な数学性能や
+すべてのmulti-agent構成へ一般化しません。詳細は
+[英語Technical Report](docs/technical-report.md)と
+[評価結果](services/research-api/evaluation/LIVE_RESULTS.md)を参照してください。
 
 ## 必要環境
 
@@ -84,7 +90,6 @@ AI概念マップ生成を使う場合は、起動する同じshellだけにキ�
 read -s "OPENAI_API_KEY?OpenAI APIキーを入力: "
 export OPENAI_API_KEY
 echo
-export OPENAI_MODEL="gpt-5-mini"
 ./scripts/dev.sh
 ```
 
@@ -151,8 +156,9 @@ export OPENAI_API_KEY="このshellだけに設定"
 
 ## 今後
 
-- 代表問題のsingle／multiを複数試行し、品質・引用・時間・費用を公開する
+- 用意済みの盲検人手監査を完了し、評価者間一致を報告する
 - 独立レビュー済み評価セットと利用者による学習計画評価を追加する
+- 記録済み失敗例に対して、必要時だけ動くVerifierと修正方式を比較する
 - PDF workerとアプリbundleのcode splittingを改善する
 - 公開ホスティング前に認証、レート制限、アップロード隔離を設計する
 

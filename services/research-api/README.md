@@ -6,6 +6,17 @@ A learning repository for building a grounded mathematics assistant with the
 OpenAI Responses API, local PDF retrieval, guarded symbolic computation, and
 small agent workflows.
 
+## Research result at a glance
+
+The complete production comparison has been run. On 27 locally authored cases
+with five trials each (135 paired observations), a single model call and a
+five-stage multi-agent pipeline both achieved **81.5% answer accuracy** using
+the same retrieved evidence and the same `gpt-5.4-mini-2026-03-17` snapshot.
+The multi-agent pipeline cost **5.8x more** and had **8.4x higher median
+latency**, so the single-call design remains the default. See the
+[English technical report](../../docs/technical-report.md) and
+[generated results](evaluation/LIVE_RESULTS.md).
+
 This repository is intentionally an educational sandbox. The separate
 `math-research-assistant-portfolio` repository is the clean starting point for
 the final portfolio product.
@@ -212,7 +223,18 @@ the PDFs, hashes, pages, and chunk references with:
 ```
 
 Real model evaluation is separate from deterministic CI. It requires explicit
-opt-in, an environment-only API key, and hard cost limits. See
-[docs/live_evaluation.md](docs/live_evaluation.md). Live evaluation is **Not run**
-unless measured JSONL records are present; missing measurements are never shown as
-zero.
+opt-in, an environment-only API key, and hard cost limits. The complete paired
+evaluation was run as experiment `14d125678646d716`: 135/135 pairs completed
+with no terminal failures. Multi-agent wins/ties/losses were 17/101/17; human
+audit remains pending. See [docs/live_evaluation.md](docs/live_evaluation.md)
+for the frozen protocol and [evaluation/LIVE_RESULTS.md](evaluation/LIVE_RESULTS.md)
+for the generated summary. Missing future measurements must be reported as
+`Not run`, never as zero.
+
+## Roadmap after the completed live comparison
+
+- Complete the prepared blind human audit and report inter-rater agreement.
+- Expand beyond the 27 locally authored cases and test external validity.
+- Use the recorded failure classes to test targeted verifier/revision policies.
+- Retain multi-agent orchestration only where a measured quality gain justifies
+  its added latency, cost, and failure surface.

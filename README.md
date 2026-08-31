@@ -59,16 +59,25 @@ Each role has a distinct strict JSON schema. Retriever output changes the real s
 
 ## Published measurements
 
-The checked-in UI result is a four-case **offline deterministic extraction smoke test**, not an LLM benchmark:
+The complete paired production comparison uses the same
+`gpt-5.4-mini-2026-03-17` snapshot and the exact same hybrid/top-5 retrieval
+result for both conditions. It covers 27 cases with five trials each (135
+paired observations):
 
-| Mode | Cases | Accuracy | Citation precision | Citation recall | Median time | External API cost |
+| Mode | Runs | Accuracy | Citation precision | Citation recall | Median time | API cost |
 |---|---:|---:|---:|---:|---:|---:|
-| Single | 4 | 100% | 100% | 100% | 0.361 ms | $0.0000 |
-| Fixed multi-role demo | 4 | 100% | 100% | 100% | 0.370 ms | $0.0000 |
+| Single call | 135 | 81.5% | 88.9% | 96.3% | 1.648 s | $0.142476 |
+| Five-stage multi-agent | 135 | 81.5% | 89.6% | 96.3% | 13.909 s | $0.828224 |
 
-These four deliberately small CC0 cases use deterministic substring/evidence checks and do not establish general mathematical quality or multi-agent superiority. The repository also contains a larger 27-case dataset, but no complete live-LLM comparison over that dataset is published here. **Live OpenAI evaluation: Not run in the published artifacts.**
+Multi-agent wins/ties/losses were 17/101/17. It matched answer accuracy while
+costing 5.8x more and taking 8.4x longer at the median, so the single-call
+condition remains the default for this task and evidence set. Blind human audit
+remains pending; the authored fixture set and automated grader do not establish
+general mathematical quality or universal multi-agent inferiority.
 
-See [docs/evaluation.md](docs/evaluation.md) for metric definitions, version separation, and the staged live-evaluation procedure.
+See the [English technical report](docs/technical-report.md),
+[generated results](services/research-api/evaluation/LIVE_RESULTS.md), and
+[evaluation guide](docs/evaluation.md).
 
 ## Requirements
 
@@ -104,7 +113,6 @@ To enable AI graph generation, set the key only in the shell that starts the ser
 read -s "OPENAI_API_KEY?OpenAI API key: "
 export OPENAI_API_KEY
 echo
-export OPENAI_MODEL="gpt-5-mini"
 ./scripts/dev.sh
 ```
 
@@ -121,7 +129,7 @@ RESEARCH_API_PORT=18765 LEARNING_MAP_API_PORT=18000 WEB_DEV_PORT=15173 ./scripts
 | Variable | Purpose | Default |
 |---|---|---|
 | `OPENAI_API_KEY` | Server-side API credential; never commit it | unset |
-| `OPENAI_MODEL` | Learning-map generation model | `gpt-5-mini` |
+| Generation model | Fixed repository-wide in `config/openai-generation.json` | `gpt-5.4-mini-2026-03-17` |
 | `RESEARCH_API_URL` | Production-like BFF upstream | `http://127.0.0.1:8765` |
 | `VITE_LEARNING_MAP_API_URL` | Browser-visible local learning-map API URL | `http://127.0.0.1:8000` |
 | `FRONTEND_ORIGIN` | Allowed local CORS origins | local Vite origins |
@@ -208,8 +216,9 @@ See [SECURITY.md](SECURITY.md) and [docs/security.md](docs/security.md).
 
 ## Roadmap
 
-- Run repeated, budgeted live single/multi comparisons over representative cases.
-- Add larger independently reviewed evaluation sets and human learning-plan studies.
+- Complete the prepared blind human audit and report inter-rater agreement.
+- Add larger, independently reviewed evaluation sets and human learning-plan studies.
+- Test gated verification and revision policies against the recorded failures.
 - Improve code splitting and PDF worker loading.
 - Add OCR/VLM only after privacy, licensing, and quality evaluation.
 - Define a safe deployment boundary before offering any public hosted service.
