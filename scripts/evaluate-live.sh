@@ -1,7 +1,7 @@
-#!/bin/zsh
+#!/usr/bin/env bash
 set -euo pipefail
 
-root=${0:A:h:h}
+root=$(cd "$(dirname "$0")/.." && pwd)
 service="$root/services/research-api"
 cd "$service"
 exec "$service/.venv/bin/python" evaluation/live_runner.py "$@"

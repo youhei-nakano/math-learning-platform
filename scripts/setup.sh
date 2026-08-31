@@ -1,7 +1,7 @@
-#!/bin/zsh
+#!/usr/bin/env bash
 set -euo pipefail
 
-root=${0:A:h:h}
+root=$(cd "$(dirname "$0")/.." && pwd)
 python3 -m venv "$root/services/research-api/.venv"
 "$root/services/research-api/.venv/bin/pip" install \
   -r "$root/services/research-api/requirements.txt" \

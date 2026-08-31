@@ -1,7 +1,7 @@
-#!/bin/zsh
+#!/usr/bin/env bash
 set -euo pipefail
 
-root=${0:A:h:h}
+root=$(cd "$(dirname "$0")/.." && pwd)
 service="$root/services/research-api"
 python_bin="$service/.venv/bin/python"
 output=${1:-/tmp/math-learning-deterministic.jsonl}

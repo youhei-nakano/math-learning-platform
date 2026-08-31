@@ -1,7 +1,7 @@
-#!/bin/zsh
+#!/usr/bin/env bash
 set -euo pipefail
 
-root=${0:A:h:h}
+root=$(cd "$(dirname "$0")/.." && pwd)
 python_bin="$root/services/research-api/.venv/bin/python"
 (cd "$root/services/research-api" && "$python_bin" research_api.py) &
 api_pid=$!
