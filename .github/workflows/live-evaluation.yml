@@ -32,6 +32,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: live-evaluation
+  cancel-in-progress: false
+
 jobs:
   evaluate:
     environment: live-evaluation
@@ -42,6 +46,8 @@ jobs:
         working-directory: services/research-api
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -57,12 +63,23 @@ jobs:
           TIMEOUT_SECONDS: ${{ inputs.timeout_seconds }}
           MAX_COST_USD: ${{ inputs.max_cost_usd }}
         run: |
+          set -euo pipefail
           args=(--live --mode "$MODE" --output evaluation/runs/live.jsonl --limit "$PROBLEM_COUNT" --model "$MODEL" --trials "$TRIALS" --timeout-seconds "$TIMEOUT_SECONDS" --max-total-cost-usd "$MAX_COST_USD")
           if [[ -n "$CASE_ID" ]]; then args+=(--case-id "$CASE_ID"); fi
           python evaluation/live_runner.py "${args[@]}"
+      - name: Build sanitized aggregate
+        if: always()
+        run: |
+          set -euo pipefail
+          [[ -f evaluation/runs/live.jsonl ]] || touch evaluation/runs/live.jsonl
+          python evaluation/report_live.py evaluation/runs/live.jsonl \
+            --json evaluation/public/live-summary.json \
+            --csv evaluation/public/live-summary.csv \
+            --markdown evaluation/public/live-summary.md
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: live-evaluation-jsonl
-          path: services/research-api/evaluation/runs/live.jsonl
+          name: live-evaluation-summary
+          path: services/research-api/evaluation/public/live-summary.*
           if-no-files-found: warn
+          retention-days: 7

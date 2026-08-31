@@ -6,8 +6,17 @@
 node_modules/
 dist/
 __pycache__/
+.pytest_cache/
+.ruff_cache/
+.coverage
+coverage.xml
 *.py[cod]
 *.log
+.idea/
+.vscode/
+tmp/
+uploads/
+*.local.pdf
 data/
 indexes/
 participant-data/
@@ -24,4 +33,3 @@ services/research-api/participant-data/
 services/research-api/user-pdfs/
 apps/web/node_modules/
 apps/web/dist/
-
