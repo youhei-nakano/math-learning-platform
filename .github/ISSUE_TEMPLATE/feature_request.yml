@@ -1,0 +1,24 @@
+name: Feature request
+description: Propose a focused product, research, or evaluation improvement.
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What learner or evaluation problem should this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: Describe the smallest useful change and its alternatives.
+    validations:
+      required: true
+  - type: textarea
+    id: risks
+    attributes:
+      label: Evidence, privacy, and cost considerations
+      description: Note data rights, model calls, evaluation requirements, and likely limitations.
