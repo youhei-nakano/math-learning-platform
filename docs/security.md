@@ -18,3 +18,22 @@
 
 This is a research prototype. It does not guarantee mathematical correctness or
 the completeness of citations.
+
+## Trust boundaries
+
+- Browser: owns the selected local PDF, localStorage, map edits, and consent UI.
+- Node BFF: accepts only the explicit grounded-question request and does not hold
+  an OpenAI credential.
+- Research API: serves only checked-in CC0 fixtures and deterministic tools.
+- Learning-map API: holds the optional OpenAI key and accepts bounded JSON, never
+  the PDF binary.
+- OpenAI API: receives only the content explicitly described in the two consent
+  stages. Model requests set `store=false` in the current implementation.
+
+## Not a deployment security model
+
+Both Python services intentionally bind to loopback for local development. They
+have no authentication, tenant isolation, upload quarantine, durable encrypted
+storage, or public rate limiting. Do not expose ports 8000 or 8765 to a network.
+Authentication, abuse prevention, origin policy, data retention, and incident
+response require a separate review before hosting.
