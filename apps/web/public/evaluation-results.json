@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-30T20:50:01.486962+00:00",
+  "datasetVersion": "demo-v1",
+  "model": "offline-extractive-v1",
+  "retrieval": "hybrid + deterministic rerank",
+  "rows": [
+    {
+      "experimentId": "1ae4f0acbbdec663",
+      "mode": "single",
+      "label": "単一エージェント",
+      "qualityScore": 1.0,
+      "citationPrecision": 1.0,
+      "citationRecall": 1.0,
+      "completionRate": 1.0,
+      "medianSeconds": 0.000361,
+      "meanSeconds": 0.0003875,
+      "minSeconds": 0.000306,
+      "maxSeconds": 0.000522,
+      "stdevSeconds": 8.73999427917433e-05,
+      "averageCostUsd": 0.0,
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "runs": 4,
+      "successes": 4
+    },
+    {
+      "experimentId": "a7a052c8ba740612",
+      "mode": "multi",
+      "label": "複数役割エージェント",
+      "qualityScore": 1.0,
+      "citationPrecision": 1.0,
+      "citationRecall": 1.0,
+      "completionRate": 1.0,
+      "medianSeconds": 0.00037,
+      "meanSeconds": 0.0003815,
+      "minSeconds": 0.00032,
+      "maxSeconds": 0.000466,
+      "stdevSeconds": 6.361407077054572e-05,
+      "averageCostUsd": 0.0,
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "runs": 4,
+      "successes": 4
+    }
+  ],
+  "limitations": [
+    "4問の小規模CC0デモ評価",
+    "決定論的な抽出回答と部分文字列採点",
+    "外部モデル、OCR、VLMはNot run",
+    "API費用のみを集計し端末計算費用は含まない"
+  ]
+}

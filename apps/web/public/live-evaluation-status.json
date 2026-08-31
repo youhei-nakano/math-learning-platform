@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "status": "not_run",
+  "reason": "実LLM JSONLがないため未実行です (No live-LLM records).",
+  "generatedAt": "2026-08-30T23:11:48.413856+00:00",
+  "experiments": []
+}
